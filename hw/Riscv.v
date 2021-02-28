@@ -28,6 +28,7 @@ module Riscv(
 
 wire [31:0] next_pc;
 wire [2:0] alu_a_src, alu_b_src, branch_base_src, branch_offset_src;
+wire [1:0] reg_write_src;
 wire [3:0] alu_op;
 wire [1:0] branch_op;
 wire [4:0] rs1_addr, rs2_addr, rd_addr;
@@ -63,7 +64,8 @@ InstructionControlExtractor instr_ctrl_extract(`COMB_ONLY_MODULE
   .rs2_addr(rs2_addr),
   .rd_addr(rd_addr),
   .alu_a_src(alu_a_src),
-  .alu_b_src(alu_b_src)
+  .alu_b_src(alu_b_src),
+  .reg_write_src(reg_write_src)
 );
 InstructionAluOpTranslator instr_alu_op_trans(`COMB_ONLY_MODULE
   // in
@@ -145,7 +147,7 @@ BranchUnit branch_unit(`COMB_ONLY_MODULE
 );
 RegisterWriteMux reg_write_mux(`COMB_ONLY_MODULE
   // in
-  .should_read_mem(should_read_mem),
+  .src(reg_write_src),
   .alu_res(alu_res),
   .mem_read_data(mem_read_data),
   // out

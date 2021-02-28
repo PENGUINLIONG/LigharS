@@ -15,7 +15,7 @@ module InstructionBranchSelTranslator(
   localparam BRANCH_DONT_CARE    = 2'bXX;
   
   localparam ALU_SRC_ZERO      = 3'b000;
-  localparam ALU_SRC_FOUR      = 3'b001;
+  localparam ALU_SRC_PC_PLUS4  = 3'b001;
   localparam ALU_SRC_PC        = 3'b010;
   localparam ALU_SRC_REG       = 3'b011;
   localparam ALU_SRC_IMM12     = 3'b100;
@@ -39,7 +39,7 @@ module InstructionBranchSelTranslator(
         3'b111:  branch_op <= BRANCH_ALU_ZERO;
         default: branch_op <= BRANCH_DONT_CARE;
         endcase
-        branch_base_src   <= ALU_SRC_PC;
+        branch_base_src   <= ALU_SRC_PC_PLUS4;
         branch_offset_src <= ALU_SRC_BRANCH;
       end
       // ## Jump and Link Register

@@ -6,7 +6,7 @@
 // | ALU Source | Description                                 |
 // |------------|---------------------------------------------|
 // |     3'b000 | Zero                                        |
-// |     3'b001 | Four                                        |
+// |     3'b001 | Current instruction address (PC) plus four  |
 // |     3'b010 | Current instruction address (PC)            |
 // |     3'b011 | Register data                               |
 // |     3'b100 | Sign-extended 12-bit instruction immediate  |
@@ -34,7 +34,7 @@ module AluInputMux(
 
   assign data = 
     src == 3'b000 ? 0 :
-    src == 3'b001 ? 4 :
+    src == 3'b001 ? instr_addr + 4 :
     src == 3'b010 ? instr_addr :
     src == 3'b011 ? rs_data :
     src == 3'b100 ? imm12 :

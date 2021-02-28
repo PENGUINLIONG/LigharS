@@ -57,7 +57,7 @@ module tb_Riscv();
 
   initial begin
     clk = 0;
-    reset = 1; #10 reset = 0;
+    reset = 1; #12 reset = 0;
     instr_idx = 0;
     // Initialize the instruction memory with instruction data.
 
