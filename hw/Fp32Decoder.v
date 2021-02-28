@@ -10,7 +10,6 @@ module Fp32Decoder (
 
   output is_zero,
   output is_denorm,
-  output is_norm,
   output is_inf,
   output is_nan
 );
