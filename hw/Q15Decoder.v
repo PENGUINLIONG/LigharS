@@ -6,7 +6,7 @@ module Q15Decoder (
   output sign,
   output nan,
   output zero,
-  output inf,
+  output inf
 );
 
   assign sign = data[63];

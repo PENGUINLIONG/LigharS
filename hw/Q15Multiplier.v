@@ -16,7 +16,7 @@ module Q15Multiplier (
     .inf (a_inf)
   );
   wire b_sign, b_nan, b_zero, b_inf;
-  Q15Decoder decode_a(
+  Q15Decoder decode_b(
     .data(b),
     .sign(b_sign),
     .nan (b_nan),
@@ -25,21 +25,20 @@ module Q15Multiplier (
   );
 
   wire nan = a_nan | b_nan | (a_inf & b_inf);
-  wire inf_sign = (a_inf & a_sign) ^ (b_inf & b_sign);
-  wire [63:0] inf_res = {inf_sign, 63'h7fffffffffffffff};
+  wire [63:0] inf_res = {expected_sign, 63'h7fffffffffffffff};
 
   wire signed [126:0] a_extended = {{63{a_sign}}, a};
   wire signed [126:0] b_extended = {{63{b_sign}}, b};
   wire signed [126:0] product_extended = a_extended * b_extended;
   wire signed [63:0]  product = product_extended[111:48];
 
-  wire product_sign  = product[111];
+  wire product_sign  = product[63];
   wire expected_sign = a_sign ^ b_sign;
   wire overflow = a_inf | b_inf | (product_sign != expected_sign ? 1 : 0);
 
   assign res =
     nan      ? 64'h8000000000000000 :
     overflow ? inf_res :
-               sum;
+               product;
 
 endmodule
