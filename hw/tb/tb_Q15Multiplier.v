@@ -19,7 +19,7 @@ module tb_Q15Multiplier();
   );
 
   initial begin
-  
+
     // General computation.
     a = 64'h0001200000000000; // 1.125
     b = 64'h0008000000000000; // 8
@@ -32,7 +32,7 @@ module tb_Q15Multiplier();
     #5;
     `assert(res, 64'hfff7000000000000);
     `assert(nan, 0);
-    
+
     // Overflow (Positive infinity as in floating point numbers)
     a = 64'h0002000000000000; // 2
     b = 64'h7fff000000000000; // 65535
@@ -47,6 +47,12 @@ module tb_Q15Multiplier();
     `assert(res, 64'hffffffffffffffff);
     `assert(nan, 0);
 
+    // NaN
+    a = 64'h7fffffffffffffff; // Inf
+    b = 64'hffffffffffffffff; // -Inf
+    #5;
+    `assert(res, 64'hffffffffffffffff);
+    `assert(nan, 1);
 
     $display("UNIT TEST PASSED: %m");
   end
