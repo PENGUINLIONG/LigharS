@@ -66,8 +66,7 @@ module Alu(
   input [31:0] a_data,
   input [31:0] b_data,
 
-  output [31:0] alu_res,
-  output zero
+  output [31:0] alu_res
 );
 
   wire signed [31:0] signed_a_data = $signed(a_data);
