@@ -9,6 +9,7 @@ module InstructionControlExtractor(
 
   output [4:0] rs1_addr,
   output [4:0] rs2_addr,
+  output [4:0] rs3_addr,
   output [4:0] rd_addr,
 
   output reg [2:0] alu_a_src,
@@ -18,6 +19,7 @@ module InstructionControlExtractor(
 
   assign rs1_addr = instr[19:15];
   assign rs2_addr = instr[24:20];
+  assign rs3_addr = instr[31:27];
   assign rd_addr = instr[11:7];
 
   localparam ALU_SRC_ZERO      = 3'b000;

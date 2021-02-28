@@ -15,7 +15,7 @@ module XmmRegisterFile(
 
   output [63:0] read_data1,
   output [63:0] read_data2,
-  output [63:0] read_data3,
+  output [63:0] read_data3
 );
 
   reg [63:0] inner [31:0];

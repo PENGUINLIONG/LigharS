@@ -31,12 +31,15 @@ wire [2:0] alu_a_src, alu_b_src, branch_base_src, branch_offset_src;
 wire [1:0] reg_write_src;
 wire [3:0] alu_op;
 wire [1:0] branch_op;
-wire [4:0] rs1_addr, rs2_addr, rd_addr;
+wire [4:0] rs1_addr, rs2_addr, rs3_addr, rd_addr;
 wire [31:0] rs1_data, rs2_data;
+wire [63:0] xs1_data, xs2_data, xs3_data;
 wire [31:0] a_data, b_data, branch_base_data, branch_offset_data;
 wire [31:0] alu_res;
 wire should_write_reg;
+wire should_write_xmm;
 wire [31:0] reg_write_data;
+wire [63:0] xmm_write_data;
 
 assign data_addr = alu_res;
 assign mem_write_data = rs2_data;
@@ -91,6 +94,19 @@ RegisterFile reg_file(`MEM_LIKE_MODULE
   // out
   .read_data1(rs1_data),
   .read_data2(rs2_data)
+);
+XmmRegisterFile xmm_reg_file(`MEM_LIKE_MODULE
+  // in
+  .read_addr1(xs1_addr),
+  .read_addr2(xs2_addr),
+  .read_addr3(xs3_addr),
+  .write_addr(rd_addr),
+  .should_write(should_write_xmm),
+  .write_data(xmm_write_data),
+  // out
+  .read_data1(xs1_data),
+  .read_data2(xs2_data),
+  .read_data3(xs3_data)
 );
 AluInputMux alu_a_mux(`COMB_ONLY_MODULE
   // in
