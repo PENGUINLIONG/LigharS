@@ -4,17 +4,44 @@ module Q15Adder (
   input signed [63:0] a,
   input signed [63:0] b,
 
-  output nan,
   output signed [63:0] res
 );
 
-  wire signed [64:0] a_extended = {a[63], a};
-  wire signed [64:0] b_extended = {b[63], b};
+  wire a_sign, a_nan, a_zero, a_inf;
+  Q15Decoder decode_a(
+    .data(a),
+    .sign(a_sign),
+    .nan (a_nan),
+    .zero(a_zero),
+    .inf (a_inf)
+  );
+  wire b_sign, b_nan, b_zero, b_inf;
+  Q15Decoder decode_a(
+    .data(b),
+    .sign(b_sign),
+    .nan (b_nan),
+    .zero(b_zero),
+    .inf (b_inf)
+  );
+
+  wire nan = a_nan | b_nan | (a_inf & b_inf);
+  wire inf_sign = (a_inf & a_sign) ^ (b_inf & b_sign);
+  wire [63:0] inf_res = {inf_sign, 63'h7fffffffffffffff};
+
+  wire signed [64:0] a_extended = {a_sign, a};
+  wire signed [64:0] b_extended = {b_sign, b};
   wire signed [64:0] sum_extended = a_extended + b_extended;
   wire signed [63:0] sum = sum_extended[63:0];
-
+  
   // Two arguments have the same sign, but the result has a different sign.
-  wire overflow = (a[63] ^~ b[63]) & (a[63] ^ sum[63]);
-  assign res = overflow ? {a[63], ~63'h0} : sum;
+  wire sum_sign = sum[63];
+  wire a_b_same_sign   = a_sign ==   b_sign ? 1 : 0;
+  wire a_sum_diff_sign = a_sign != sum_sign ? 1 : 0;
+  wire overflow = a_inf | b_inf | (a_b_same_sign & a_res_diff_sign);
+
+  assign res =
+    nan      ? 64'h8000000000000000 :
+    overflow ? inf_res :
+               sum;
 
 endmodule
