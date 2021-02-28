@@ -30,12 +30,12 @@ ________________________________________________________________________
 | Operation | FPU Result      | Output Mux | Flag        | Sign Source |
 |___________|_________________|____________|_____________|_____________|
 | fadd.s    | + ( 1 * B ) + C | FPU Result | 0           | FPU Result  |
-| fsub.s    | - ( 1 * B ) + C | FPU Result | 0           | FPU Result  |
+| fsub.s    | + ( 1 * B ) - C | FPU Result | 0           | FPU Result  |
 | fmul.s    | + ( A * B ) + 0 | FPU Result | 0           | FPU Result  |
 | fdiv.s    | + ( A / B ) + 0 | FPU Result | 0           | FPU Result  |
-| fsgnj.s   | + ( 1 * 0 ) @ C | FPU Result | 0           | !(B ^ C)    |
-| fsgnjn.s  | + ( 1 * 0 ) @ C | FPU Result | 0           | B ^ C       |
-| fsgnjx.s  | + ( 1 * 0 ) @ C | FPU Result | 0           | B           |
+| fsgnj.s   | + ( 1 * 0 ) S C | FPU Result | 0           | !(B ^ C)    |
+| fsgnjn.s  | + ( 1 * 0 ) S C | FPU Result | 0           | B ^ C       |
+| fsgnjx.s  | + ( 1 * 0 ) S C | FPU Result | 0           | B           |
 | fmin.s    | - ( 1 * B ) + C | C if flag  | neg         | FPU Result  |
 | fmax.s    | + ( 1 * B ) - C | C if flag  | neg         | FPU Result  |
 | fle.s     | - ( 1 * B ) + C | 1 if flag  | neg or zero | FPU Result  |
@@ -51,8 +51,8 @@ ________________________________________________________________________
 | fmsub.s   | + ( A * B ) - C | FPU Result | 0           | FPU Result  |
 | fnmadd.s  | - ( A * B ) + C | FPU Result | 0           | FPU Result  |
 | fnmsub.s  | - ( A * B ) - C | FPU Result | 0           | FPU Result  |
-| flw       | DONE IN ALU     | N/A        | N/A         | N/A         |
-| fsw       | DONE IN ALU     | N/A        | N/A         | N/A         |
+| flw       | DONE IN CONTROL | N/A        | N/A         | N/A         |
+| fsw       | DONE IN CONTROL | N/A        | N/A         | N/A         |
 | fsqrt.s   | NOT IMPLEMENTED | N/A        | N/A         | N/A         |
 |___________|_________________|____________|_____________|_____________|
 ```
