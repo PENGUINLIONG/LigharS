@@ -31,6 +31,7 @@ wire [2:0] alu_a_src, alu_b_src;
 wire [2:0] branch_base_src, branch_offset_src;
 wire [1:0] reg_write_src, xmm_write_src, mem_write_src;
 wire [3:0] alu_op;
+wire [2:0] fpu_op;
 wire [1:0] branch_op;
 wire [4:0] rs1_addr, rs2_addr, rs3_addr, rd_addr;
 wire [31:0] rs1_data, rs2_data;

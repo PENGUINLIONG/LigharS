@@ -6,6 +6,7 @@ module InstructionControlExtractor(
   output reg should_read_mem,
   output reg should_write_mem,
   output reg should_write_reg,
+  output reg should_write_xmm,
 
   output [4:0] rs1_addr,
   output [4:0] rs2_addr,
@@ -15,6 +16,7 @@ module InstructionControlExtractor(
   output reg [2:0] alu_a_src,
   output reg [2:0] alu_b_src,
   output reg [1:0] reg_write_src,
+  output reg [1:0] xmm_write_src,
   output reg [1:0] mem_write_src
 );
 
@@ -32,9 +34,15 @@ module InstructionControlExtractor(
   localparam ALU_SRC_XMM       = 3'b110;
   localparam ALU_SRC_DONT_CARE = 3'bXXX;
 
-  localparam REG_WRITE_SRC_DONT_WRITE = 2'b00;
   localparam REG_WRITE_SRC_ALU = 2'b01;
   localparam REG_WRITE_SRC_MEM = 2'b10;
+  localparam REG_WRITE_SRC_FPU = 2'b11;
+  localparam REG_WRITE_SRC_DONT_CARE = 2'bXX;
+
+  localparam XMM_WRITE_SRC_ALU = 2'b01;
+  localparam XMM_WRITE_SRC_MEM = 2'b10;
+  localparam XMM_WRITE_SRC_FPU = 2'b11;
+  localparam XMM_WRITE_SRC_DONT_CARE = 2'bXX;
 
   localparam MEM_WRITE_SRC_REG = 2'b01;
   localparam MEM_WRITE_SRC_XMM = 2'b10;
@@ -44,14 +52,17 @@ module InstructionControlExtractor(
     case (instr[6:2])
       // ## Memory Read Access
       //
-      // A word will be extracted from address position `rs1 + imm12`.
+      // A word will be extracted from address position `rs1 + imm12` and stored
+      // in `rd`.
       5'h00: begin
         should_read_mem        <= 1;
         should_write_mem       <= 0;
         should_write_reg       <= 1;
+        should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_IMM12;
         reg_write_src          <= REG_WRITE_SRC_MEM;
+        xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Fences
@@ -60,9 +71,11 @@ module InstructionControlExtractor(
         should_read_mem        <= 0;
         should_write_mem       <= 0;
         should_write_reg       <= 0;
+        should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_DONT_CARE;
         alu_b_src              <= ALU_SRC_DONT_CARE;
-        reg_write_src          <= REG_WRITE_SRC_DONT_WRITE;
+        reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
+        xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Immediate-value Arithmetic Operations
@@ -70,9 +83,11 @@ module InstructionControlExtractor(
         should_read_mem        <= 0;
         should_write_mem       <= 0;
         should_write_reg       <= 1;
+        should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_IMM12;
         reg_write_src          <= REG_WRITE_SRC_ALU;
+        xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Add Upper Immediate to PC
@@ -80,21 +95,25 @@ module InstructionControlExtractor(
         should_read_mem        <= 0;
         should_write_mem       <= 0;
         should_write_reg       <= 1;
+        should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_PC;
         alu_b_src              <= ALU_SRC_IMM20;
         reg_write_src          <= REG_WRITE_SRC_ALU;
+        xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Memory Write Access
       //
-      // A word in `rs2` will be written back to adress position `rs1 + imm12`.
+      // A word in `rs2` will be written back to address position `rs1 + imm12`.
       5'h08: begin
         should_read_mem        <= 0;
         should_write_mem       <= 1;
         should_write_reg       <= 0;
+        should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_IMM12;
-        reg_write_src          <= REG_WRITE_SRC_DONT_WRITE;
+        reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
+        xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_REG;
       end
       // ## Register-register Arithmetic Operations
@@ -102,9 +121,11 @@ module InstructionControlExtractor(
         should_read_mem        <= 0;
         should_write_mem       <= 0;
         should_write_reg       <= 1;
+        should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_REG;
         reg_write_src          <= REG_WRITE_SRC_ALU;
+        xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Load Upper Immediate
@@ -112,8 +133,10 @@ module InstructionControlExtractor(
         should_read_mem        <= 0;
         should_write_mem       <= 0;
         should_write_reg       <= 1;
+        should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_ZERO;
         alu_b_src              <= ALU_SRC_IMM20;
+        xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_ALU;
       end      
       // ## Branch instructions
@@ -121,9 +144,11 @@ module InstructionControlExtractor(
         should_read_mem        <= 0;
         should_write_mem       <= 0;
         should_write_reg       <= 0;
+        should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_REG;
-        reg_write_src          <= REG_WRITE_SRC_DONT_WRITE;
+        reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
+        xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Jump and Link Register
@@ -133,9 +158,11 @@ module InstructionControlExtractor(
         should_read_mem        <= 0;
         should_write_mem       <= 0;
         should_write_reg       <= 1;
+        should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_PC_PLUS4;
         alu_b_src              <= ALU_SRC_ZERO;
         reg_write_src          <= REG_WRITE_SRC_ALU;
+        xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Jump and Link
@@ -145,9 +172,11 @@ module InstructionControlExtractor(
         should_read_mem        <= 0;
         should_write_mem       <= 0;
         should_write_reg       <= 1;
+        should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_PC_PLUS4;
         alu_b_src              <= ALU_SRC_ZERO;
         reg_write_src          <= REG_WRITE_SRC_ALU;
+        xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Unsupported OPs
@@ -155,9 +184,11 @@ module InstructionControlExtractor(
         should_read_mem        <= 0;
         should_write_mem       <= 0;
         should_write_reg       <= 0;
+        should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_DONT_CARE;
         alu_b_src              <= ALU_SRC_DONT_CARE;
-        reg_write_src          <= REG_WRITE_SRC_DONT_WRITE;
+        reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
+        xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
     endcase
