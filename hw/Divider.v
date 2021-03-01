@@ -19,7 +19,7 @@ module Divider #(parameter WIDTH=4) (
 
   reg [$clog2(WIDTH):0] it_count;
 
-  assign div_digit = remainder_ >= divisor_ ? 1 : 0;
+  wire div_digit = remainder_ >= divisor_ ? 1 : 0;
   assign quotient = quotient_;
   assign remainder = remainder_[WIDTH-1:0];
 

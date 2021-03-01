@@ -10,7 +10,7 @@ module Q15Decoder (
 );
 
   assign sign = data[63];
-  assign inf = data[62:0] == 63'h7fffffffffffffff ? 1 : 0;
+  assign inf = (data == 64'h8000000000000001 ? 1 : 0) | (data == 63'h7fffffffffffffff ? 1 : 0);
   assign zero = data[62:0] == 0 ? 1 : 0;
   assign nan = sign & zero;
 

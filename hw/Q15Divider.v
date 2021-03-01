@@ -8,7 +8,6 @@ module Q15Divider (
   input signed [63:0] b,
 
   output busy,
-  output nan,
   output signed [63:0] res
 );
 
@@ -21,7 +20,7 @@ module Q15Divider (
     .inf (a_inf)
   );
   wire b_sign, b_nan, b_zero, b_inf;
-  Q15Decoder decode_a(
+  Q15Decoder decode_b(
     .data(b),
     .sign(b_sign),
     .nan (b_nan),
@@ -29,17 +28,20 @@ module Q15Divider (
     .inf (b_inf)
   );
 
-  wire nan = a_nan | b_nan | b_zero | (a_inf & b_inf);
-  wire inf_sign = (a_inf & a_sign) ^ (b_inf & b_sign);
-  wire [63:0] inf_res = {inf_sign, 63'h7fffffffffffffff};
+  wire nan = a_nan | b_nan | b_zero | (a_inf & b_inf) | div_by_zero;
+  wire res_sign = a_sign ^ b_sign;
+  
+  wire [63:0] a_unsigned = a_sign ? -a : a;
+  wire [63:0] b_unsigned = b_sign ? -b : b;
 
-  wire signed [68:0] a_extended = {a, 15'b0};
-  wire signed [68:0] b_extended = {b, 15'b0};
+  wire [111:0] a_extended = {a_unsigned, 48'b0};
+  wire [111:0] b_extended = {48'b0, b_unsigned};
 
   wire launch_inner = launch & !a_zero & !b_zero & !a_inf & !a_inf;
   wire div_by_zero;
-  wire signed [68:0] quotient_extended;
-  Divider #(.WIDTH=69) inner(
+  wire [111:0] quotient_extended;
+  wire [63:0] quotient = quotient_extended[63:0];
+  Divider #(.WIDTH(112)) inner(
     .clk(clk),
     .reset(reset),
     .launch(launch_inner),
@@ -47,17 +49,15 @@ module Q15Divider (
     .divisor(b_extended),
     .busy(busy),
     .div_by_zero(div_by_zero),
-    .quotient(quotient)
+    .quotient(quotient_extended)
   );
 
-  wire signed [63:0] quotient;
 
-  assign nan = a_nan | b_nan | div_by_zero;
   assign res = 
     nan    ? 64'h8000000000000000 :
     a_inf  ? a :
     b_inf  ? 0 :
     a_zero ? 0 :
-             quotient;
+    (res_sign ? -quotient : quotient);
 
 endmodule
