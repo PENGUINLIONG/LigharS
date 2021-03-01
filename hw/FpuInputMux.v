@@ -16,7 +16,7 @@ module FpuInputMux(
   input [31:0] rs_data,
   input signed [63:0] xs_data,
 
-  output [63:0] data,
+  output [63:0] data
 );
 
   wire [63:0] rs_q15;
@@ -27,7 +27,7 @@ module FpuInputMux(
 
   wire data =
     src == 2'b00 ? rs_q15 :
-    src == 2'b01 ? 0'h8001000000000000 :
+    src == 2'b01 ? 64'h8001000000000000 :
     src == 2'b10 ? xs_data :
     src == 2'b11 ? -xs_data :
     32'bX;

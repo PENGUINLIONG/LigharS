@@ -3,11 +3,24 @@
 // Unit. This is expected to achieve better precision then floating point
 // arithmetics while retaining better performance.
 
+// FPU opcode table:
+// ____________________________________
+// |         |                        |
+// | FPU OP  | Description            |
+// |---------|------------------------|
+// |  3'b000 |   A * B + C            |
+// |  3'b001 |   A * B - C            |
+// |  3'b010 | - A * B + C            |
+// |  3'b011 | - A * B - C            |
+// |---------|------------------------|
+// |  3'b100 |   A / B                |
+// |_________|________________________|
+//
 module Fpu (
   input clk,
-  input mul_div,
-  input neg_a,
-  input neg_c,
+  input reset,
+
+  input [2:0] fpu_op,
   input signed [63:0] a_data,
   input signed [63:0] b_data,
   input signed [63:0] c_data,
@@ -15,6 +28,10 @@ module Fpu (
   output busy,
   output signed [63:0] fpu_res
 );
+
+  wire mul_div = fpu_op[2];
+  wire neg_a   = fpu_op[1];
+  wire neg_c   = fpu_op[0];
 
   wire signed [63:0] a = neg_a ? -a_data : a_data;
   wire signed [63:0] b = b_data;

@@ -26,7 +26,7 @@ module Riscv(
   output [31:0] mem_write_data
 );
 
-wire no_update = 0;
+wire no_update = fpu_busy;
 
 wire [31:0] next_pc;
 wire [2:0] alu_a_src, alu_b_src;
@@ -39,6 +39,7 @@ wire [31:0] rs1_data, rs2_data;
 wire [63:0] xs1_data, xs2_data, xs3_data;
 wire [31:0] a_data, b_data;
 wire [31:0] branch_base_data, branch_offset_data;
+wire fpu_busy;
 wire [31:0] alu_res;
 wire [63:0] fpu_res;
 wire should_write_reg;
@@ -160,6 +161,16 @@ Alu alu(`COMB_ONLY_MODULE
   .b_data(b_data),
   // out
   .alu_res(alu_res)
+);
+Fpu fpu(`MEM_LIKE_MODULE
+  // in
+  .fpu_op(fpu_op),
+  .a_data(xs1_data),
+  .b_data(xs2_data),
+  .c_data(xs3_data),
+  // out
+  .busy(fpu_busy),
+  .fpu_res(fpu_res)
 );
 BranchUnit branch_unit(`COMB_ONLY_MODULE
   // in
