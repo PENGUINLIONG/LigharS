@@ -16,7 +16,7 @@ module Q15Adder (
     .inf (a_inf)
   );
   wire b_sign, b_nan, b_zero, b_inf;
-  Q15Decoder decode_a(
+  Q15Decoder decode_b(
     .data(b),
     .sign(b_sign),
     .nan (b_nan),
@@ -25,8 +25,6 @@ module Q15Adder (
   );
 
   wire nan = a_nan | b_nan | (a_inf & b_inf);
-  wire inf_sign = (a_inf & a_sign) ^ (b_inf & b_sign);
-  wire [63:0] inf_res = {inf_sign, 63'h7fffffffffffffff};
 
   wire signed [64:0] a_extended = {a_sign, a};
   wire signed [64:0] b_extended = {b_sign, b};
@@ -37,11 +35,11 @@ module Q15Adder (
   wire sum_sign = sum[63];
   wire a_b_same_sign   = a_sign ==   b_sign ? 1 : 0;
   wire a_sum_diff_sign = a_sign != sum_sign ? 1 : 0;
-  wire overflow = a_inf | b_inf | (a_b_same_sign & a_res_diff_sign);
+  wire overflow = a_inf | b_inf | (a_b_same_sign & a_sum_diff_sign);
 
   assign res =
     nan      ? 64'h8000000000000000 :
-    overflow ? inf_res :
+    overflow ? (sum_sign ? 64'h7fffffffffffffff : 64'h8000000000000001) :
                sum;
 
 endmodule
