@@ -20,7 +20,7 @@ module FpuInputMux(
 );
 
   wire [63:0] rs_q15;
-  Fp32ToQ15 alu_res_cvt(
+  Fp32ToQ15 rs_cvt(
     .fp32_data(rs_data),
     .q15_data(rs_q15)
   );

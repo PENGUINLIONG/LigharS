@@ -12,8 +12,8 @@ module InstructionControlExtractor(
   output [4:0] rs3_addr,
   output [4:0] rd_addr,
 
-  output reg [2:0] alu_a_src,
-  output reg [2:0] alu_b_src,
+  output reg [3:0] alu_a_src,
+  output reg [3:0] alu_b_src,
   output reg [1:0] reg_write_src
 );
 
@@ -28,8 +28,7 @@ module InstructionControlExtractor(
   localparam ALU_SRC_REG       = 3'b011;
   localparam ALU_SRC_IMM12     = 3'b100;
   localparam ALU_SRC_IMM20     = 3'b101;
-  localparam ALU_SRC_JUMP      = 3'b110;
-  localparam ALU_SRC_BRANCH    = 3'b111;
+  localparam ALU_SRC_XMM       = 3'b110;
   localparam ALU_SRC_DONT_CARE = 3'bXXX;
 
   localparam REG_WRITE_SRC_DONT_WRITE = 2'b00;

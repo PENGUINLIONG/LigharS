@@ -27,7 +27,8 @@ module Riscv(
 );
 
 wire [31:0] next_pc;
-wire [2:0] alu_a_src, alu_b_src, branch_base_src, branch_offset_src;
+wire [2:0] alu_a_src, alu_b_src;
+wire [2:0] branch_base_src, branch_offset_src;
 wire [1:0] reg_write_src, xmm_write_src;
 wire [3:0] alu_op;
 wire [1:0] branch_op;
@@ -115,6 +116,7 @@ AluInputMux alu_a_mux(`COMB_ONLY_MODULE
   .instr_addr(instr_addr),
   .instr(instr),
   .rs_data(rs1_data),
+  .xs_data(xs1_data),
   // out
   .data(a_data)
 );
@@ -124,10 +126,11 @@ AluInputMux alu_b_mux(`COMB_ONLY_MODULE
   .instr_addr(instr_addr),
   .instr(instr),
   .rs_data(rs2_data),
+  .xs_data(xs2_data),
   // out
   .data(b_data)
 );
-AluInputMux branch_base_mux(`COMB_ONLY_MODULE
+BranchInputMux branch_base_mux(`COMB_ONLY_MODULE
   // in
   .src(branch_base_src),
   .instr_addr(instr_addr),
@@ -136,7 +139,7 @@ AluInputMux branch_base_mux(`COMB_ONLY_MODULE
   // out
   .data(branch_base_data)
 );
-AluInputMux branch_offset_mux(`COMB_ONLY_MODULE
+BranchInputMux branch_offset_mux(`COMB_ONLY_MODULE
   // in
   .src(branch_offset_src),
   .instr_addr(instr_addr),
