@@ -6,7 +6,7 @@ module XmmRegisterWriteMux(
   input [31:0] mem_read_data,
   input [63:0] fpu_res,
 
-  output [31:0] xmm_write_data
+  output [63:0] xmm_write_data
 );
 
   wire [63:0] alu_res_q15;

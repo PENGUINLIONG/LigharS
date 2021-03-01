@@ -12,9 +12,10 @@ module InstructionControlExtractor(
   output [4:0] rs3_addr,
   output [4:0] rd_addr,
 
-  output reg [3:0] alu_a_src,
-  output reg [3:0] alu_b_src,
-  output reg [1:0] reg_write_src
+  output reg [2:0] alu_a_src,
+  output reg [2:0] alu_b_src,
+  output reg [1:0] reg_write_src,
+  output reg [1:0] mem_write_src
 );
 
   assign rs1_addr = instr[19:15];
@@ -35,6 +36,10 @@ module InstructionControlExtractor(
   localparam REG_WRITE_SRC_ALU = 2'b01;
   localparam REG_WRITE_SRC_MEM = 2'b10;
 
+  localparam MEM_WRITE_SRC_REG = 2'b01;
+  localparam MEM_WRITE_SRC_XMM = 2'b10;
+  localparam MEM_WRITE_SRC_DONT_CARE = 2'bXX;
+
   always @(*) begin
     case (instr[6:2])
       // ## Memory Read Access
@@ -47,6 +52,7 @@ module InstructionControlExtractor(
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_IMM12;
         reg_write_src          <= REG_WRITE_SRC_MEM;
+        mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Fences
       5'h03: begin
@@ -57,6 +63,7 @@ module InstructionControlExtractor(
         alu_a_src              <= ALU_SRC_DONT_CARE;
         alu_b_src              <= ALU_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_DONT_WRITE;
+        mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Immediate-value Arithmetic Operations
       5'h04: begin
@@ -66,6 +73,7 @@ module InstructionControlExtractor(
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_IMM12;
         reg_write_src          <= REG_WRITE_SRC_ALU;
+        mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Add Upper Immediate to PC
       5'h05: begin
@@ -75,6 +83,7 @@ module InstructionControlExtractor(
         alu_a_src              <= ALU_SRC_PC;
         alu_b_src              <= ALU_SRC_IMM20;
         reg_write_src          <= REG_WRITE_SRC_ALU;
+        mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Memory Write Access
       //
@@ -86,6 +95,7 @@ module InstructionControlExtractor(
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_IMM12;
         reg_write_src          <= REG_WRITE_SRC_DONT_WRITE;
+        mem_write_src          <= MEM_WRITE_SRC_REG;
       end
       // ## Register-register Arithmetic Operations
       5'h0c: begin
@@ -95,6 +105,7 @@ module InstructionControlExtractor(
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_REG;
         reg_write_src          <= REG_WRITE_SRC_ALU;
+        mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Load Upper Immediate
       5'h0d: begin
@@ -113,6 +124,7 @@ module InstructionControlExtractor(
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_REG;
         reg_write_src          <= REG_WRITE_SRC_DONT_WRITE;
+        mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Jump and Link Register
       //
@@ -124,6 +136,7 @@ module InstructionControlExtractor(
         alu_a_src              <= ALU_SRC_PC_PLUS4;
         alu_b_src              <= ALU_SRC_ZERO;
         reg_write_src          <= REG_WRITE_SRC_ALU;
+        mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Jump and Link
       //
@@ -135,6 +148,7 @@ module InstructionControlExtractor(
         alu_a_src              <= ALU_SRC_PC_PLUS4;
         alu_b_src              <= ALU_SRC_ZERO;
         reg_write_src          <= REG_WRITE_SRC_ALU;
+        mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Unsupported OPs
       default: begin
@@ -144,6 +158,7 @@ module InstructionControlExtractor(
         alu_a_src              <= ALU_SRC_DONT_CARE;
         alu_b_src              <= ALU_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_DONT_WRITE;
+        mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
     endcase
   end
