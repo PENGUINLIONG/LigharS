@@ -28,9 +28,6 @@ module Q15Divider (
     .inf (b_inf)
   );
 
-  wire nan = a_nan | b_nan | b_zero | (a_inf & b_inf) | div_by_zero;
-  wire res_sign = a_sign ^ b_sign;
-  
   wire [63:0] a_unsigned = a_sign ? -a : a;
   wire [63:0] b_unsigned = b_sign ? -b : b;
 
@@ -53,7 +50,9 @@ module Q15Divider (
   );
 
 
-  assign res = 
+  wire nan = a_nan | b_nan | b_zero | (a_inf & b_inf) | div_by_zero;
+  wire res_sign = a_sign ^ b_sign;
+  assign res =
     nan    ? 64'h8000000000000000 :
     a_inf  ? a :
     b_inf  ? 0 :

@@ -10,8 +10,8 @@ module Q15Madder (
 
   wire signed [63:0] prod;
   Q15Multiplier mul(
-    .a(a_data),
-    .b(b_data),
+    .a(a),
+    .b(b),
     .res(prod)
   );
 

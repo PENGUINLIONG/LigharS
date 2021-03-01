@@ -26,8 +26,6 @@ module Riscv(
   output [31:0] mem_write_data
 );
 
-wire no_update = fpu_busy;
-
 wire [31:0] next_pc;
 wire [2:0] alu_a_src, alu_b_src;
 wire [2:0] branch_base_src, branch_offset_src;
@@ -46,6 +44,8 @@ wire should_write_reg;
 wire should_write_xmm;
 wire [31:0] reg_write_data;
 wire [63:0] xmm_write_data;
+
+wire no_update = fpu_busy;
 
 assign data_addr = alu_res;
 
@@ -186,6 +186,7 @@ RegisterWriteMux reg_write_mux(`COMB_ONLY_MODULE
   .src(reg_write_src),
   .alu_res(alu_res),
   .mem_read_data(mem_read_data),
+  .fpu_res(fpu_res),
   // out
   .reg_write_data(reg_write_data)
 );

@@ -37,8 +37,6 @@ module Fpu (
   wire signed [63:0] b = b_data;
   wire signed [63:0] c = neg_c ? -c_data : c_data;
 
-  assign busy = div_busy;
-
   wire signed [63:0] mad_res;
   Q15Madder mad(
     .a(a),
@@ -47,8 +45,8 @@ module Fpu (
     .res(mad_res)
   );
 
-  wire launch_div = mul_div & !div_busy;
   wire div_busy;
+  wire launch_div = mul_div & !div_busy;
   wire signed [63:0] div_res;
   Q15Divider div(
     .clk(clk),
@@ -60,6 +58,7 @@ module Fpu (
     .res(div_res)
   );
 
+  assign busy = div_busy;
   assign fpu_res = mul_div ? div_res : mad_res;
 
 endmodule

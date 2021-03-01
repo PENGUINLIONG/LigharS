@@ -24,9 +24,6 @@ module Q15Multiplier (
     .inf (b_inf)
   );
 
-  wire nan = a_nan | b_nan | (a_inf & b_inf);
-  wire [63:0] inf_res = {expected_sign, 63'h7fffffffffffffff};
-
   wire signed [126:0] a_extended = {{63{a_sign}}, a};
   wire signed [126:0] b_extended = {{63{b_sign}}, b};
   wire signed [126:0] product_extended = a_extended * b_extended;
@@ -36,9 +33,10 @@ module Q15Multiplier (
   wire expected_sign = a_sign ^ b_sign;
   wire overflow = a_inf | b_inf | (product_sign != expected_sign ? 1 : 0);
 
+  wire nan = a_nan | b_nan | (a_inf & b_inf);
   assign res =
     nan      ? 64'h8000000000000000 :
-    overflow ? inf_res :
+    overflow ? (expected_sign ? 64'h7fffffffffffffff : 64'h8000000000000001) :
                product;
 
 endmodule
