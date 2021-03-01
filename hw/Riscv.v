@@ -26,6 +26,8 @@ module Riscv(
   output [31:0] mem_write_data
 );
 
+wire no_update = 0;
+
 wire [31:0] next_pc;
 wire [2:0] alu_a_src, alu_b_src;
 wire [2:0] branch_base_src, branch_offset_src;
@@ -54,6 +56,7 @@ wire alu_res_is_zero = alu_res == 0 ? 1 : 0;
 
 ProgramCounter pc(`MEM_LIKE_MODULE
   // in
+  .no_update(no_update),
   .next_pc(next_pc),
   // out
   .instr_addr(instr_addr)

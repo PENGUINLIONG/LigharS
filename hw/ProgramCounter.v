@@ -6,6 +6,9 @@ module ProgramCounter(
   input clk,
   input reset,
 
+  // Disable program counter update. Usually used to synchronize multi-cycle
+  // instructions.
+  input no_update,
   input [31:0] next_pc,
 
   output [31:0] instr_addr
@@ -18,6 +21,8 @@ module ProgramCounter(
   always @(negedge clk, posedge reset) begin
     if (reset)
       pc <= 0;
+    else if (no_update)
+      pc <= pc;
     else
       pc <= next_pc;
   end
