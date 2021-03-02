@@ -119,4 +119,4 @@ The offset to `ray_gen` function head is in the first column. For the time I run
 
 ## Handy Script
 
-All above procedures have been compiled into a single script, located at `script/Compile-Shader.ps1`. It will directly update `hw/tb/tb_Riscv.v` so that you can test it out in behavioral simulator right away.
+All above procedures have been compiled into a single script, located at `script/compile-shader.py`. It will directly update `hw/tb/tb_Riscv.v` so that you can test it out in behavioral simulator right away.
