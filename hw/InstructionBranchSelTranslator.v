@@ -38,7 +38,7 @@ module InstructionBranchSelTranslator(
         3'b111:  branch_op <= BRANCH_ALU_ZERO;
         default: branch_op <= BRANCH_DONT_CARE;
         endcase
-        branch_base_src   <= BRANCH_SRC_PC_PLUS4;
+        branch_base_src   <= BRANCH_SRC_PC;
         branch_offset_src <= BRANCH_SRC_BRANCH;
       end
       // ## Jump and Link Register
