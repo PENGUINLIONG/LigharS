@@ -250,12 +250,12 @@ namespace liong {
 
     Vec3 hit_pt = ray.o - ray.v * r1 / r2;
 
-    Vec3 p = hit_pt - tri.a;
+    Vec3 p_rel = hit_pt - tri.a;
     f32 d00 = dot(x, x);
     f32 d01 = dot(x, y);
     f32 d11 = dot(y, y);
-    f32 d20 = dot(p, x);
-    f32 d21 = dot(p, y);
+    f32 d20 = dot(p_rel, x);
+    f32 d21 = dot(p_rel, y);
 
     f32 denom = d00 * d11 - d01 * d01;
     f32 u = (d11 * d20 - d01 * d21) / denom;
@@ -268,7 +268,7 @@ namespace liong {
     const Vec3 AMBIENT { 0.2f, 0.2f, 0.2f };
     const f32 F0 = 0.04f;
 
-    p = tri.a + u * x + v * y;
+    Vec3 p = tri.a + u * x + v * y;
     Vec3 refl = -reflect(ray.v, n);
     Ray refl_ray = Ray { p, normalized(refl) };
 
