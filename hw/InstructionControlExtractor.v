@@ -69,6 +69,21 @@ module InstructionControlExtractor(
         xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
+      // ## Floating-point Memory Read Access
+      //
+      // A word will be extracted from address position `rs1 + imm12` and stored
+      // in `xd`.
+      5'h01: begin
+        should_read_mem        <= 1;
+        should_write_mem       <= 0;
+        should_write_reg       <= 0;
+        should_write_xmm       <= 1;
+        alu_a_src              <= ALU_SRC_REG;
+        alu_b_src              <= ALU_SRC_IMM12;
+        reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
+        xmm_write_src          <= XMM_WRITE_SRC_MEM;
+        mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
+      end
       // ## Fences
       5'h03: begin
         // FIXME: (penguinliong) Just a nop for now.
@@ -119,6 +134,20 @@ module InstructionControlExtractor(
         reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
         xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_REG;
+      end
+      // ## Floating-point Memory Write Access
+      //
+      // A word in `xs2` will be written back to address position `rs1 + imm12`.
+      5'h08: begin
+        should_read_mem        <= 0;
+        should_write_mem       <= 1;
+        should_write_reg       <= 0;
+        should_write_xmm       <= 0;
+        alu_a_src              <= ALU_SRC_REG;
+        alu_b_src              <= ALU_SRC_IMM12;
+        reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
+        xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
+        mem_write_src          <= MEM_WRITE_SRC_XMM;
       end
       // ## Register-register Arithmetic Operations
       5'h0c: begin
