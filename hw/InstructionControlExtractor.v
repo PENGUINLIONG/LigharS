@@ -15,6 +15,9 @@ module InstructionControlExtractor(
 
   output reg [2:0] alu_a_src,
   output reg [2:0] alu_b_src,
+  output reg [1:0] fpu_a_src,
+  output reg [1:0] fpu_b_src,
+  output reg [1:0] fpu_c_src,
   output reg [2:0] reg_write_src,
   output reg [1:0] xmm_write_src,
   output reg [1:0] mem_write_src
@@ -33,6 +36,12 @@ module InstructionControlExtractor(
   localparam ALU_SRC_IMM20     = 3'b101;
   localparam ALU_SRC_XMM       = 3'b110;
   localparam ALU_SRC_DONT_CARE = 3'bXXX;
+
+  localparam FPU_SRC_REG       = 2'b00;
+  localparam FPU_SRC_ONE       = 2'b01;
+  localparam FPU_SRC_XMM       = 2'b10;
+  localparam FPU_SRC_NEG_XMM   = 2'b11;
+  localparam FPU_SRC_DONT_CARE = 2'bXX;
 
   localparam REG_WRITE_SRC_FPU_U32   = 3'b000;
   localparam REG_WRITE_SRC_FPU_I32   = 3'b001;
@@ -65,6 +74,9 @@ module InstructionControlExtractor(
         should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_IMM12;
+        fpu_a_src              <= FPU_SRC_DONT_CARE;
+        fpu_b_src              <= FPU_SRC_DONT_CARE;
+        fpu_c_src              <= FPU_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_MEM;
         xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
@@ -80,6 +92,9 @@ module InstructionControlExtractor(
         should_write_xmm       <= 1;
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_IMM12;
+        fpu_a_src              <= FPU_SRC_DONT_CARE;
+        fpu_b_src              <= FPU_SRC_DONT_CARE;
+        fpu_c_src              <= FPU_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
         xmm_write_src          <= XMM_WRITE_SRC_MEM;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
@@ -93,6 +108,9 @@ module InstructionControlExtractor(
         should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_DONT_CARE;
         alu_b_src              <= ALU_SRC_DONT_CARE;
+        fpu_a_src              <= FPU_SRC_DONT_CARE;
+        fpu_b_src              <= FPU_SRC_DONT_CARE;
+        fpu_c_src              <= FPU_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
         xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
@@ -105,6 +123,9 @@ module InstructionControlExtractor(
         should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_IMM12;
+        fpu_a_src              <= FPU_SRC_DONT_CARE;
+        fpu_b_src              <= FPU_SRC_DONT_CARE;
+        fpu_c_src              <= FPU_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_ALU;
         xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
@@ -117,6 +138,9 @@ module InstructionControlExtractor(
         should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_PC;
         alu_b_src              <= ALU_SRC_IMM20;
+        fpu_a_src              <= FPU_SRC_DONT_CARE;
+        fpu_b_src              <= FPU_SRC_DONT_CARE;
+        fpu_c_src              <= FPU_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_ALU;
         xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
@@ -131,6 +155,9 @@ module InstructionControlExtractor(
         should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_IMM12;
+        fpu_a_src              <= FPU_SRC_DONT_CARE;
+        fpu_b_src              <= FPU_SRC_DONT_CARE;
+        fpu_c_src              <= FPU_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
         xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_REG;
@@ -145,6 +172,9 @@ module InstructionControlExtractor(
         should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_IMM12;
+        fpu_a_src              <= FPU_SRC_DONT_CARE;
+        fpu_b_src              <= FPU_SRC_DONT_CARE;
+        fpu_c_src              <= FPU_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
         xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_XMM;
@@ -157,6 +187,9 @@ module InstructionControlExtractor(
         should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_REG;
+        fpu_a_src              <= FPU_SRC_DONT_CARE;
+        fpu_b_src              <= FPU_SRC_DONT_CARE;
+        fpu_c_src              <= FPU_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_ALU;
         xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
@@ -169,8 +202,12 @@ module InstructionControlExtractor(
         should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_ZERO;
         alu_b_src              <= ALU_SRC_IMM20;
-        xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
+        fpu_a_src              <= FPU_SRC_DONT_CARE;
+        fpu_b_src              <= FPU_SRC_DONT_CARE;
+        fpu_c_src              <= FPU_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_ALU;
+        xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
+        mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end      
       // ## Branch instructions
       5'h18: begin
@@ -180,6 +217,9 @@ module InstructionControlExtractor(
         should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_REG;
         alu_b_src              <= ALU_SRC_REG;
+        fpu_a_src              <= FPU_SRC_DONT_CARE;
+        fpu_b_src              <= FPU_SRC_DONT_CARE;
+        fpu_c_src              <= FPU_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
         xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
@@ -194,6 +234,9 @@ module InstructionControlExtractor(
         should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_PC_PLUS4;
         alu_b_src              <= ALU_SRC_ZERO;
+        fpu_a_src              <= FPU_SRC_DONT_CARE;
+        fpu_b_src              <= FPU_SRC_DONT_CARE;
+        fpu_c_src              <= FPU_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_ALU;
         xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
@@ -208,6 +251,9 @@ module InstructionControlExtractor(
         should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_PC_PLUS4;
         alu_b_src              <= ALU_SRC_ZERO;
+        fpu_a_src              <= FPU_SRC_DONT_CARE;
+        fpu_b_src              <= FPU_SRC_DONT_CARE;
+        fpu_c_src              <= FPU_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_ALU;
         xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
@@ -220,6 +266,9 @@ module InstructionControlExtractor(
         should_write_xmm       <= 0;
         alu_a_src              <= ALU_SRC_DONT_CARE;
         alu_b_src              <= ALU_SRC_DONT_CARE;
+        fpu_a_src              <= FPU_SRC_DONT_CARE;
+        fpu_b_src              <= FPU_SRC_DONT_CARE;
+        fpu_c_src              <= FPU_SRC_DONT_CARE;
         reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
         xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
