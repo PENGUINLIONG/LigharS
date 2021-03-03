@@ -143,7 +143,7 @@ OUTPUT_VERILOG = """`timescale 1ns/1ps
 `define MEM_LIKE_MODULE .clk(clk), .reset(reset),
 `define COMB_ONLY_MODULE
 
-`define i(xinstr) instr_mem.inner[instr_idx] = xinstr; instr_idx = instr_idx + 1;
+`define i(xinstr) data_mem.inner[instr_idx] = xinstr; instr_idx = instr_idx + 1;
 
 module tb_Riscv();
   reg clk, reset;
@@ -157,19 +157,14 @@ module tb_Riscv();
   wire should_read_mem;
   wire should_write_mem;
 
-  InstructionMemory instr_mem(`COMB_ONLY_MODULE
-    // in
-    .addr(instr_addr),
-    // out
-    .instr(instr)
-  );
-
   DataMemory data_mem(`MEM_LIKE_MODULE
     // in
-    .addr(data_addr),
+    .instr_addr(instr_addr),
+    .data_addr(data_addr),
     .should_write(should_write_mem),
     .write_data(mem_write_data),
     // out
+    .instr(instr),
     .read_data(mem_read_data)
   );
 
