@@ -74,6 +74,7 @@ InstructionControlExtractor instr_ctrl_extract(`COMB_ONLY_MODULE
   .should_read_mem(should_read_mem),
   .should_write_mem(should_write_mem),
   .should_write_reg(should_write_reg),
+  .should_write_xmm(should_write_xmm),
   .rs1_addr(rs1_addr),
   .rs2_addr(rs2_addr),
   .rd_addr(rd_addr),
@@ -120,8 +121,7 @@ XmmRegisterFile xmm_reg_file(`MEM_LIKE_MODULE
   .write_data(xmm_write_data),
   // out
   .read_data1(xs1_data),
-  .read_data2(xs2_data),
-  .read_data3(xs3_data)
+  .read_data2(xs2_data)
 );
 AluInputMux alu_a_mux(`COMB_ONLY_MODULE
   // in

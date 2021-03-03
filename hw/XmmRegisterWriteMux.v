@@ -12,7 +12,7 @@
 // |       3'b110 | FPU result                                            |
 // |______________|_______________________________________________________|
 module XmmRegisterWriteMux(
-  input [1:0] src,
+  input [2:0] src,
   input [31:0] alu_res,
   input [31:0] mem_read_data,
   input [63:0] fpu_res,

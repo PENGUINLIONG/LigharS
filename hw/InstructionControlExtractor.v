@@ -15,16 +15,15 @@ module InstructionControlExtractor(
   output reg [2:0] alu_a_src,
   output reg [2:0] alu_b_src,
   output reg [3:0] fpu_op,
-  output reg [1:0] fpu_a_src,
-  output reg [1:0] fpu_b_src,
+  output reg [2:0] fpu_a_src,
+  output reg [2:0] fpu_b_src,
   output reg [2:0] reg_write_src,
-  output reg [1:0] xmm_write_src,
+  output reg [2:0] xmm_write_src,
   output reg [1:0] mem_write_src
 );
 
   assign rs1_addr = instr[19:15];
   assign rs2_addr = instr[24:20];
-  assign rs3_addr = instr[31:27];
   assign rd_addr = instr[11:7];
 
   localparam ALU_SRC_ZERO      = 3'b000;

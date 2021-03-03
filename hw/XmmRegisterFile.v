@@ -8,14 +8,12 @@ module XmmRegisterFile(
 
   input [4:0] read_addr1,
   input [4:0] read_addr2,
-  input [4:0] read_addr3,
   input should_write,
   input [4:0] write_addr,
   input [63:0] write_data,
 
   output [63:0] read_data1,
-  output [63:0] read_data2,
-  output [63:0] read_data3
+  output [63:0] read_data2
 );
 
   reg [63:0] inner [31:0];
