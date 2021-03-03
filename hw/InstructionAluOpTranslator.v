@@ -23,7 +23,10 @@ module InstructionAluOpTranslator(
         endcase
       5'h0c: // ALU operations.
         case (funct3)
-          3'b000: alu_op = funct7[5] ? 4'b0001 : 4'b0000;
+          3'b000: alu_op =
+            funct7[0] ? 4'b0010 :
+            funct7[5] ? 4'b0001 :
+            4'b0000;
           3'b001: alu_op = 4'b0100;
           3'b010: alu_op = 4'b1101;
           3'b011: alu_op = 4'b1100;

@@ -48,6 +48,7 @@ endmodule
 // |---------|------------------------|
 // | 4'b0000 | addition               |
 // | 4'b0001 | subtranction           |
+// | 4'b0010 | multiplication         |
 // |---------|------------------------|
 // | 4'b0100 | shift left             |
 // | 4'b0110 | shift right unsigned   |
@@ -83,6 +84,7 @@ module Alu(
   assign alu_res =
     alu_op == 4'b0000 ? a_data + b_data :
     alu_op == 4'b0001 ? a_data - b_data :
+    alu_op == 4'b0010 ? a_data * b_data :
 
     alu_op == 4'b0100 ? a_data << shamt :
     alu_op == 4'b0110 ? a_data >> shamt :

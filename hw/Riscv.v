@@ -79,6 +79,7 @@ InstructionControlExtractor instr_ctrl_extract(`COMB_ONLY_MODULE
   .rd_addr(rd_addr),
   .alu_a_src(alu_a_src),
   .alu_b_src(alu_b_src),
+  .fpu_op(fpu_op),
   .fpu_a_src(fpu_a_src),
   .fpu_b_src(fpu_b_src),
   .reg_write_src(reg_write_src),

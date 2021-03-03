@@ -14,6 +14,7 @@ module InstructionControlExtractor(
 
   output reg [2:0] alu_a_src,
   output reg [2:0] alu_b_src,
+  output reg [3:0] fpu_op,
   output reg [1:0] fpu_a_src,
   output reg [1:0] fpu_b_src,
   output reg [2:0] reg_write_src,
@@ -210,9 +211,9 @@ module InstructionControlExtractor(
         mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
       end
       // ## Floating-point arithmetics
-      5'h0d: begin
-        casex (instr[31:27]) begin
-          5'b000xx: begin // fadd.s, fsub.s, fmul.s, fdiv.s
+      5'h14: begin
+        case (instr[31:27])
+          5'h01: begin // fadd.s, fsub.s, fmul.s, fdiv.s
             should_read_mem        <= 0;
             should_write_mem       <= 0;
             should_write_reg       <= 0;
@@ -338,7 +339,7 @@ module InstructionControlExtractor(
             xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
             mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
           end
-        end
+        endcase
       end
       // ## Branch instructions
       5'h18: begin
