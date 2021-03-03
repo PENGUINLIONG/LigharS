@@ -28,19 +28,19 @@ module Riscv(
 
 wire [31:0] next_pc;
 wire [2:0] alu_a_src, alu_b_src;
-wire [2:0] fpu_a_src, fpu_b_src, fpu_c_src;
+wire [2:0] fpu_a_src, fpu_b_src;
 wire [2:0] branch_base_src, branch_offset_src;
 wire [2:0] reg_write_src;
 wire [2:0] xmm_write_src;
 wire [1:0] mem_write_src;
 wire [3:0] alu_op;
-wire [2:0] fpu_op;
+wire [3:0] fpu_op;
 wire [1:0] branch_op;
-wire [4:0] rs1_addr, rs2_addr, rs3_addr, rd_addr;
+wire [4:0] rs1_addr, rs2_addr, rd_addr;
 wire [31:0] rs1_data, rs2_data;
-wire [63:0] xs1_data, xs2_data, xs3_data;
+wire [63:0] xs1_data, xs2_data;
 wire [31:0] a_data, b_data;
-wire [63:0] fa_data, fb_data, fc_data;
+wire [63:0] fa_data, fb_data;
 wire [31:0] branch_base_data, branch_offset_data;
 wire fpu_busy;
 wire [31:0] alu_res;
@@ -76,13 +76,11 @@ InstructionControlExtractor instr_ctrl_extract(`COMB_ONLY_MODULE
   .should_write_reg(should_write_reg),
   .rs1_addr(rs1_addr),
   .rs2_addr(rs2_addr),
-  .rs3_addr(rs3_addr),
   .rd_addr(rd_addr),
   .alu_a_src(alu_a_src),
   .alu_b_src(alu_b_src),
   .fpu_a_src(fpu_a_src),
   .fpu_b_src(fpu_b_src),
-  .fpu_c_src(fpu_c_src),
   .reg_write_src(reg_write_src),
   .xmm_write_src(xmm_write_src),
   .mem_write_src(mem_write_src)
@@ -116,7 +114,6 @@ XmmRegisterFile xmm_reg_file(`MEM_LIKE_MODULE
   // in
   .read_addr1(rs1_addr),
   .read_addr2(rs2_addr),
-  .read_addr3(rs3_addr),
   .write_addr(rd_addr),
   .should_write(should_write_xmm),
   .write_data(xmm_write_data),
@@ -161,14 +158,6 @@ FpuInputMux fpu_b_mux(`COMB_ONLY_MODULE
   // out
   .data(fb_data)
 );
-FpuInputMux fpu_c_mux(`COMB_ONLY_MODULE
-  // in
-  .src(fpu_b_src),
-  //.rs_data(rs3_data),
-  .xs_data(xs3_data),
-  // out
-  .data(fc_data)
-);
 BranchInputMux branch_base_mux(`COMB_ONLY_MODULE
   // in
   .src(branch_base_src),
@@ -200,7 +189,6 @@ Fpu fpu(`MEM_LIKE_MODULE
   .fpu_op(fpu_op),
   .a_data(xs1_data),
   .b_data(xs2_data),
-  .c_data(xs3_data),
   // out
   .busy(fpu_busy),
   .fpu_res(fpu_res)
