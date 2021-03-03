@@ -112,7 +112,7 @@ The memory filler code will be printed out then.
 Although by adding the header our program should be able to enter the entry point automatically, it's still merit to double check that our workflow is producing meaningful output. We use `ray_gen` as our entry point; and you can then use `objdump` to extract the address of ray-generation function:
 
 ```bash
-objdump -t ./assets/min-reprod.o | grep ray_gen
+objdump -t ./tmp/min-reprod.o | grep ray_gen
 ```
 
 The offset to `ray_gen` function head is in the first column. For the time I run this it gives `0x00000840` (with markers installed). The first `0xdeadbeef` marker starts from 52B, so I can ensure the address matches as the instruction at `0x0874` is operating on the stack pointer.
