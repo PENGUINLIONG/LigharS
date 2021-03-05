@@ -1,5 +1,6 @@
 #! /usr/bin/python
 from os import system, mkdir
+from sys import argv
 
 SRC_PATH      = "./assets/min-reprod.cpp"
 ASM_PATH      = "./tmp/min-reprod.s"
@@ -42,7 +43,8 @@ COMPILE_CMD = ' '.join([
 ])
 
 print(COMPILE_CMD)
-system(COMPILE_CMD)
+exit_code = system(COMPILE_CMD)
+assert exit_code == 0, "compilation failed"
 
 
 # 2. Assembly Decoration
@@ -84,7 +86,8 @@ ASSEMBLE_CMD = ' '.join([
 ])
 
 print(ASSEMBLE_CMD)
-system(ASSEMBLE_CMD)
+exit_code = system(ASSEMBLE_CMD)
+assert exit_code == 0, "assembly failed"
 
 
 # 4. Data Memory Fill
@@ -124,9 +127,8 @@ def set_stack_ptr(value):
 
 # ---- Set launch parameters. -------------------------------------------------
 set_stack_ptr(4096)
-set_param(0, 1)
-set_param(1, 1)
-set_param(2, 4)
+for i, arg in enumerate(argv[1:]):
+  set_param(i + 1, int(arg))
 # -----------------------------------------------------------------------------
 
 assert words[0] != 0xdeadbeef, "must set the stack pointer"
