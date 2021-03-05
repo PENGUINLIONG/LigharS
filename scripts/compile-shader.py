@@ -54,6 +54,9 @@ with open(ASM_PATH) as f:
     asm = f.read()
 
 PRE_DECO = """
+	.text
+	.globl _start
+_start:
 	.word 3735928559
 	nop
 	nop
@@ -72,7 +75,8 @@ POST_DECO = """
 """
 
 with open(ASM_DECO_PATH, "w") as f:
-    f.write(PRE_DECO + asm + POST_DECO)
+    decorated_asm = asm.replace(".text", PRE_DECO, 1) + POST_DECO
+    f.write(decorated_asm)
 
 
 # 3. Machine Code Generation
@@ -90,15 +94,16 @@ exit_code = system(ASSEMBLE_CMD)
 assert exit_code == 0, "assembly failed"
 
 
-# 4. Data Memory Fill
+# 4. Machine Code Decoration
 
 obj = None
 with open(OUT_PATH, 'rb') as f:
     obj = f.read()
 
 beg = obj.find(bytes([0xef, 0xbe, 0xad, 0xde]))
-end = obj[beg + 4:].find(bytes([0xef, 0xbe, 0xad, 0xde]))
+end = obj.find(bytes([0xef, 0xbe, 0xad, 0xde]), beg + 4)
 
+print(f"found program text from {beg:08x} to {end:08x}")
 text = obj[beg:end]
 
 
@@ -124,14 +129,32 @@ def set_param(iparam, value):
     words[iparam + 1] = param2word(iparam, value)
 def set_stack_ptr(value):
     words[0] = stack_ptr2word(value)
+def set_entry_fn(entry_fn):
+    exit_code = system(f"objdump -t ./tmp/min-reprod.o | grep {entry_fn} > tmp/objdump.log")
+    assert exit_code == 0, "objdump failed"
+    entry_offset = None
+    with open("tmp/objdump.log") as f:
+      line = f.readline().strip()
+      assert len(line) != 0, f"failed to locate entry point {entry_fn}"
+      entry_offset = int(line.split()[0], 16)
+    imm20 = ((entry_offset - 1 + (1 << 12)) >> 12) << 12
+    words[9] = 0b00000000000000000000_00010_0110111 + imm20 # lui
+    words[10] = 0b000000000000_00001_000_00001_1100111 + (((entry_offset - imm20) & 0xfff) << 20) # jalr
 
-# ---- Set launch parameters. -------------------------------------------------
+
+# Set-up stack pointers and launch parameters
 set_stack_ptr(4096)
-for i, arg in enumerate(argv[1:]):
-  set_param(i + 1, int(arg))
-# -----------------------------------------------------------------------------
+for i, arg in enumerate(argv[2:]):
+  set_param(i, int(arg))
+# For some reason `clang` simply fails to inject the correct address for the
+# jump, so we force the instructions instead.
+set_entry_fn(argv[1])
 
 assert words[0] != 0xdeadbeef, "must set the stack pointer"
+
+
+
+# 5. Verilog Generation
 
 def word2instr(word):
     return f"`i(32'h{word:08x});"
@@ -170,6 +193,7 @@ module tb_Riscv();
     .read_data(mem_read_data)
   );
 
+  wire [31:0] return_value = uut.reg_file.inner[10];
 
   Riscv uut(`MEM_LIKE_MODULE
     // in
@@ -183,23 +207,34 @@ module tb_Riscv();
     .mem_write_data(mem_write_data)
   );
 
-  always #5 clk = ~clk;
-
+  reg clk_en;
   integer instr_idx;
-  always @(posedge clk) begin
-    // Execute until the instruction memory is out of instructions.
-    if (!reset && uut.pc.pc >= instr_idx * 4)
-      uut.pc.pc = 0;
-  end
-
   initial begin
     clk = 0;
+    clk_en = 0;
     reset = 1; #12 reset = 0;
+    clk_en = 1;
     instr_idx = 0;
     // Initialize the instruction memory with instruction data.
 
 """ + '\n'.join(instrs) + """
 
+    // Execute until the instruction memory is out of instructions.
+    while (1) begin
+      #5;
+      clk = ~clk & clk_en;
+
+      if (!reset && uut.pc.pc >= instr_idx * 4) begin
+        // Terminate the program here.
+        $display("THREAD FINISHED RUNNING: %m returned %d", return_value);
+        clk_en = 0;
+        $finish;
+      end
+
+      if (clk) begin
+        $display("ISSUEING INSTRUCTION: %b %h %b", instr[31:7], instr[6:2], instr[1:0]);
+      end
+    end
   end
 
 endmodule
