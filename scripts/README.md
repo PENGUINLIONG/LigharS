@@ -9,7 +9,7 @@ Script file: `scripts/compile-shader.py`
 LigharS shaders are compiler on per-thread basis. Use the following script to generate thread program with argument built-in:
 
 ```bash
-compile-shader.py ARG1 ARG2 ...
+compile-shader.py ENTRY_POINT [ARG1] [ARG2] ...
 ```
 
-Currently the thread program must have a entry-point called `ray_gen` without symbol mangling. Unset arguments are zeroed by default and over-setting arguments will not trigger any error.
+The specified entry point function must be declared with `extern "C"` to disable symbol mangling. Unset arguments are zeroed by default and over-setting arguments will not trigger any error.
