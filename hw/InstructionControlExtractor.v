@@ -212,14 +212,56 @@ module InstructionControlExtractor(
       // ## Floating-point arithmetics
       5'h14: begin
         case (instr[31:27])
-          5'h01: begin // fadd.s, fsub.s, fmul.s, fdiv.s
+          5'h00: begin // fadd.s
             should_read_mem        <= 0;
             should_write_mem       <= 0;
             should_write_reg       <= 0;
             should_write_xmm       <= 1;
             alu_a_src              <= ALU_SRC_DONT_CARE;
             alu_b_src              <= ALU_SRC_DONT_CARE;
-            fpu_op                 <= {2'b00, instr[28:27]};
+            fpu_op                 <= 4'b0000;
+            fpu_a_src              <= FPU_SRC_XMM;
+            fpu_b_src              <= FPU_SRC_XMM;
+            reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
+            xmm_write_src          <= XMM_WRITE_SRC_FPU;
+            mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
+          end
+          5'h01: begin // fsub.s
+            should_read_mem        <= 0;
+            should_write_mem       <= 0;
+            should_write_reg       <= 0;
+            should_write_xmm       <= 1;
+            alu_a_src              <= ALU_SRC_DONT_CARE;
+            alu_b_src              <= ALU_SRC_DONT_CARE;
+            fpu_op                 <= 4'b0001;
+            fpu_a_src              <= FPU_SRC_XMM;
+            fpu_b_src              <= FPU_SRC_XMM;
+            reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
+            xmm_write_src          <= XMM_WRITE_SRC_FPU;
+            mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
+          end
+          5'h02: begin // fmul.s
+            should_read_mem        <= 0;
+            should_write_mem       <= 0;
+            should_write_reg       <= 0;
+            should_write_xmm       <= 1;
+            alu_a_src              <= ALU_SRC_DONT_CARE;
+            alu_b_src              <= ALU_SRC_DONT_CARE;
+            fpu_op                 <= 4'b0010;
+            fpu_a_src              <= FPU_SRC_XMM;
+            fpu_b_src              <= FPU_SRC_XMM;
+            reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
+            xmm_write_src          <= XMM_WRITE_SRC_FPU;
+            mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
+          end
+          5'h02: begin // fdiv.s
+            should_read_mem        <= 0;
+            should_write_mem       <= 0;
+            should_write_reg       <= 0;
+            should_write_xmm       <= 1;
+            alu_a_src              <= ALU_SRC_DONT_CARE;
+            alu_b_src              <= ALU_SRC_DONT_CARE;
+            fpu_op                 <= 4'b0011;
             fpu_a_src              <= FPU_SRC_XMM;
             fpu_b_src              <= FPU_SRC_XMM;
             reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
@@ -271,6 +313,20 @@ module InstructionControlExtractor(
           5'h18: begin // fcvt.w.s, fcvt.wu.s
             should_read_mem        <= 0;
             should_write_mem       <= 0;
+            should_write_reg       <= 1;
+            should_write_xmm       <= 0;
+            alu_a_src              <= ALU_SRC_DONT_CARE;
+            alu_b_src              <= ALU_SRC_DONT_CARE;
+            fpu_op                 <= 4'b0000;
+            fpu_a_src              <= FPU_SRC_XMM;
+            fpu_b_src              <= FPU_SRC_ZERO;
+            reg_write_src          <= instr[20] ? REG_WRITE_SRC_FPU_U32 : REG_WRITE_SRC_FPU_I32;
+            xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
+            mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
+          end
+          5'h1A: begin // fcvt.s.w, fcvt.s.wu
+            should_read_mem        <= 0;
+            should_write_mem       <= 0;
             should_write_reg       <= 0;
             should_write_xmm       <= 1;
             alu_a_src              <= ALU_SRC_REG;
@@ -279,21 +335,7 @@ module InstructionControlExtractor(
             fpu_a_src              <= FPU_SRC_DONT_CARE;
             fpu_b_src              <= FPU_SRC_DONT_CARE;
             reg_write_src          <= REG_WRITE_SRC_DONT_CARE;
-            xmm_write_src          <= instr[20] ? XMM_WRITE_SRC_ALU_I32 : XMM_WRITE_SRC_ALU_U32;
-            mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
-          end
-          5'h1A: begin // fcvt.s.w, fcvt.s.wu
-            should_read_mem        <= 0;
-            should_write_mem       <= 0;
-            should_write_reg       <= 1;
-            should_write_xmm       <= 0;
-            alu_a_src              <= ALU_SRC_DONT_CARE;
-            alu_b_src              <= ALU_SRC_DONT_CARE;
-            fpu_op                 <= 4'b0000;
-            fpu_a_src              <= FPU_SRC_XMM;
-            fpu_b_src              <= FPU_SRC_ZERO;
-            reg_write_src          <= instr[20] ? REG_WRITE_SRC_FPU_I32 : REG_WRITE_SRC_FPU_U32;
-            xmm_write_src          <= XMM_WRITE_SRC_DONT_CARE;
+            xmm_write_src          <= instr[20] ? XMM_WRITE_SRC_ALU_U32 : XMM_WRITE_SRC_ALU_I32;
             mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
           end
           5'h1C: begin // fmv.x.w

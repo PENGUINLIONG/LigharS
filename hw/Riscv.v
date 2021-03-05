@@ -187,8 +187,8 @@ Alu alu(`COMB_ONLY_MODULE
 Fpu fpu(`MEM_LIKE_MODULE
   // in
   .fpu_op(fpu_op),
-  .a_data(xs1_data),
-  .b_data(xs2_data),
+  .a_data(fa_data),
+  .b_data(fb_data),
   // out
   .busy(fpu_busy),
   .fpu_res(fpu_res)

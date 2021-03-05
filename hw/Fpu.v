@@ -47,7 +47,7 @@ module Fpu (
   wire signed [63:0] sum;
   Q15Adder add(
     .a(a_data),
-    .b(-b_data),
+    .b(b_data),
     .res(sum)
   );
 

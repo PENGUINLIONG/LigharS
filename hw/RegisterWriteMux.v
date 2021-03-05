@@ -37,9 +37,9 @@ module RegisterWriteMux(
   assign reg_write_data =
     src == 3'b000 ? fpu_res_i32 :
     src == 3'b001 ? fpu_res_u32 :
-    src[2:1] == 2'b01 ? alu_res :
-    src[2:1] == 2'b10 ? mem_read_data :
-    src[2:1] == 2'b11 ? fpu_res_fp32 :
+    src == 3'b010 ? alu_res :
+    src == 3'b100 ? mem_read_data :
+    src == 3'b110 ? fpu_res_fp32 :
     32'bX;
 
 endmodule
