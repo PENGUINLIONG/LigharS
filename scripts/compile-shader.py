@@ -229,8 +229,6 @@ def relocate_symbols(symbol_offset_map, words):
         imm20 = (symbol_offset - 1 + (1 << 11)) >> 12
         imm12 = (symbol_offset - (imm20 << 12)) & 0xfff
 
-        print(imm20, imm12)
-
         word = words[instr_offset // 4]
         opcode = (word >> 2) & 0b11111
         if opcode == 0x0D or opcode == 0x05:
@@ -286,14 +284,14 @@ def set_stack_ptr(cmdbuf, value):
     cmdbuf[0] = stack_ptr2word(value)
 def set_entry_fn(symbol_offset_map):
     entry_offset = symbol_offset_map[ENTRY_FN_NAME]
-    imm20 = ((entry_offset - 1 + (1 << 12)) >> 12) << 12
+    imm20 = ((entry_offset - 1 + (1 << 11)) >> 12) << 12
     cmdbuf[9] = 0b00000000000000000000_00010_0110111 + imm20 # lui
     cmdbuf[10] = 0b000000000000_00001_000_00001_1100111 + (((entry_offset - imm20) & 0xfff) << 20) # jalr
 
 set_stack_ptr(cmdbuf, 4096)
 for i, arg in enumerate(THREAD_ARGS):
     set_param(cmdbuf, i, int(arg))
-set_entry_fn(symbol_offset_map)
+#set_entry_fn(symbol_offset_map)
 
 assert cmdbuf[0] != 0xdeadbeef, "must set the stack pointer"
 
