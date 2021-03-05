@@ -212,10 +212,12 @@ module tb_Riscv();
   );
 
   reg clk_en;
+  reg in_entry;
   integer instr_idx;
   initial begin
     clk = 0;
     clk_en = 0;
+    in_entry = 0;
     reset = 1; #12 reset = 0;
     clk_en = 1;
     instr_idx = 0;
@@ -228,14 +230,22 @@ module tb_Riscv();
       #5;
       clk = ~clk & clk_en;
 
-      if (!reset && uut.pc.pc >= instr_idx * 4) begin
+      // That's the instruction of infinite loop.
+      if (!reset && uut.pc.pc == 11 * 4) begin
         // Terminate the program here.
-        $display("THREAD FINISHED RUNNING: %m returned %d", return_value);
+        $display("");
+        $display("> THREAD FINISHED RUNNING: %m returned %d", return_value);
+        $display("");
         clk_en = 0;
         $finish;
       end
 
-      if (clk) begin
+      if (~clk) begin
+        if (uut.pc.pc > 11 * 4 & ~in_entry) begin
+          $display("THREAD ENTERED ENTRY POINT");
+          in_entry = 1;
+        end
+
         $display("ISSUEING INSTRUCTION: %b %h %b", instr[31:7], instr[6:2], instr[1:0]);
       end
     end
