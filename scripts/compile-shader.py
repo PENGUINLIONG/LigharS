@@ -368,7 +368,7 @@ module tb_Riscv();
     instr_idx = 0;
     // Initialize the instruction memory with instruction data.
 
-""" + '\n'.join(instrs) + """
+""" + '\n'.join(instrs) + f"""
 
     // Execute until the instruction memory is out of instructions.
     while (1) begin
@@ -379,7 +379,7 @@ module tb_Riscv();
       if (!reset && uut.pc.pc == 11 * 4) begin
         // Terminate the program here.
         $display("");
-        $display("> THREAD FINISHED RUNNING: %m returned %d", return_value);
+        $display("> THREAD FINISHED RUNNING: {ENTRY_FN_NAME} returned %d", return_value);
         $display("");
         clk_en = 0;
         $finish;
