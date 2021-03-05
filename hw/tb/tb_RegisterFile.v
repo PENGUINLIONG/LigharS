@@ -24,9 +24,10 @@
   dst_data = xdst_data; \
   src_addr1 = xsrc_addr1; \
   src_addr2 = xsrc_addr2; \
-  #5 clk = ~clk;  #5 clk = ~clk; \
+  #5 clk = ~clk; \
   `assert(src_data1, zsrc_data1); \
-  `assert(src_data2, zsrc_data2);
+  `assert(src_data2, zsrc_data2); \
+  #5 clk = ~clk;
 
 module tb_RegisterFile;
   reg clk, reset;
@@ -43,13 +44,13 @@ module tb_RegisterFile;
   RegisterFile uut(
     .clk(clk),
     .reset(reset),
-    .write_en(write_en),
-    .dst_addr(dst_addr),
-    .dst_data(dst_data),
-    .src_addr1(src_addr1),
-    .src_addr2(src_addr2),
-    .src_data1(src_data1),
-    .src_data2(src_data2)
+    .should_write(write_en),
+    .write_addr(dst_addr),
+    .write_data(dst_data),
+    .read_addr1(src_addr1),
+    .read_addr2(src_addr2),
+    .read_data1(src_data1),
+    .read_data2(src_data2)
   );
 
   initial begin

@@ -1,6 +1,8 @@
 `timescale 1ns/1ps
+// Register file specialized for fixed-point arithmetics. `XmmRegisterFile`
+// stores signed q15.48 fixed-point numbers which are 64 bits in width.
 
-module RegisterFile(
+module XmmRegisterFile(
   input clk,
   input reset,
 
@@ -8,19 +10,16 @@ module RegisterFile(
   input [4:0] read_addr2,
   input should_write,
   input [4:0] write_addr,
-  input [31:0] write_data,
+  input [63:0] write_data,
 
-  output [31:0] read_data1,
-  output [31:0] read_data2
+  output [63:0] read_data1,
+  output [63:0] read_data2
 );
 
-  reg [31:0] inner [31:0];
+  reg [63:0] inner [31:0];
 
   assign read_data1 = inner[read_addr1];
   assign read_data2 = inner[read_addr2];
-
-  // All write access are done on negative edge.
-  wire write_to_zero = write_addr == 5'b0 ? 1 : 0;
 
   integer i;
   always @(posedge clk, posedge reset) begin
@@ -32,10 +31,12 @@ module RegisterFile(
   end
 
   always @(negedge clk) begin
-    if (should_write & !write_to_zero)
+    if (should_write)
       inner[write_addr] <= write_data;
     else
       inner[write_addr] <= inner[write_addr];
   end
 
 endmodule
+
+
