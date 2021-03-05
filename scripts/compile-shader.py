@@ -2,10 +2,14 @@
 from os import system, mkdir
 from sys import argv
 
-SRC_PATH      = "./assets/min-reprod.cpp"
-ASM_PATH      = "./tmp/min-reprod.s"
-ASM_DECO_PATH = "./tmp/min-reprod.decorated.s"
-OUT_PATH      = "./tmp/min-reprod.o"
+SRC_NAME      = argv[1]
+ENTRY_FN_NAME = argv[2]
+THREAD_ARGS   = argv[3:]
+
+SRC_PATH      = f"./assets/{SRC_NAME}.cpp"
+ASM_PATH      = f"./tmp/{SRC_NAME}.s"
+ASM_DECO_PATH = f"./tmp/{SRC_NAME}.decorated.s"
+OUT_PATH      = f"./tmp/{SRC_NAME}.o"
 VERILOG_PATH  = "./hw/tb/tb_Riscv.v"
 
 try:
@@ -22,7 +26,7 @@ COMPILE_CMD = ' '.join([
   "-disable-free",
   "-disable-llvm-verifier",
   "-discard-value-names",
-  "-main-file-name assets/min-reprod.cpp",
+  f"-main-file-name assets/{SRC_NAME}.cpp",
   "-mrelocation-model static",
   "-mframe-pointer=none",
   "-fmath-errno",
@@ -130,7 +134,7 @@ def set_param(iparam, value):
 def set_stack_ptr(value):
     words[0] = stack_ptr2word(value)
 def set_entry_fn(entry_fn):
-    exit_code = system(f"objdump -t ./tmp/min-reprod.o | grep {entry_fn} > tmp/objdump.log")
+    exit_code = system(f"objdump -t {OUT_PATH} | grep {entry_fn} > tmp/objdump.log")
     assert exit_code == 0, "objdump failed"
     entry_offset = None
     with open("tmp/objdump.log") as f:
@@ -144,11 +148,11 @@ def set_entry_fn(entry_fn):
 
 # Set-up stack pointers and launch parameters
 set_stack_ptr(4096)
-for i, arg in enumerate(argv[2:]):
+for i, arg in enumerate(THREAD_ARGS):
   set_param(i, int(arg))
 # For some reason `clang` simply fails to inject the correct address for the
 # jump, so we force the instructions instead.
-set_entry_fn(argv[1])
+set_entry_fn(ENTRY_FN_NAME)
 
 assert words[0] != 0xdeadbeef, "must set the stack pointer"
 
