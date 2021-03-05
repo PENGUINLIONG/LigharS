@@ -28,7 +28,7 @@ module XmmRegisterWriteMux(
 
   wire [63:0] mem_read_data_q15;
   Fp32ToQ15 mem_read_data_cvt(
-    .fp32_data(alu_res),
+    .fp32_data(mem_read_data),
     .q15_data(mem_read_data_q15)
   );
 
