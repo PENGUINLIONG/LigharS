@@ -66,12 +66,13 @@ ProgramCounter pc(`MEM_LIKE_MODULE
   // out
   .instr_addr(instr_addr)
 );
+wire should_write_mem_;
 InstructionControlExtractor instr_ctrl_extract(`COMB_ONLY_MODULE
   // in
   .instr(instr),
   // out
   .should_read_mem(should_read_mem),
-  .should_write_mem(should_write_mem),
+  .should_write_mem(should_write_mem_),
   .should_write_reg(should_write_reg),
   .should_write_xmm(should_write_xmm),
   .rs1_addr(rs1_addr),
@@ -86,6 +87,7 @@ InstructionControlExtractor instr_ctrl_extract(`COMB_ONLY_MODULE
   .xmm_write_src(xmm_write_src),
   .mem_write_src(mem_write_src)
 );
+assign should_write_mem = should_write_mem_ & ~no_update;
 InstructionAluOpTranslator instr_alu_op_trans(`COMB_ONLY_MODULE
   // in
   .instr(instr),
@@ -105,7 +107,7 @@ RegisterFile reg_file(`MEM_LIKE_MODULE
   .read_addr1(rs1_addr),
   .read_addr2(rs2_addr),
   .write_addr(rd_addr),
-  .should_write(should_write_reg),
+  .should_write(should_write_reg & ~no_update),
   .write_data(reg_write_data),
   // out
   .read_data1(rs1_data),
@@ -116,7 +118,7 @@ XmmRegisterFile xmm_reg_file(`MEM_LIKE_MODULE
   .read_addr1(rs1_addr),
   .read_addr2(rs2_addr),
   .write_addr(rd_addr),
-  .should_write(should_write_xmm),
+  .should_write(should_write_xmm & ~no_update),
   .write_data(xmm_write_data),
   // out
   .read_data1(xs1_data),

@@ -254,7 +254,7 @@ module InstructionControlExtractor(
             xmm_write_src          <= XMM_WRITE_SRC_FPU;
             mem_write_src          <= MEM_WRITE_SRC_DONT_CARE;
           end
-          5'h02: begin // fdiv.s
+          5'h03: begin // fdiv.s
             should_read_mem        <= 0;
             should_write_mem       <= 0;
             should_write_reg       <= 0;
