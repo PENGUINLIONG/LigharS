@@ -1,6 +1,7 @@
 #! /usr/bin/python
 from os import system, mkdir
 from sys import argv
+import re
 
 SRC_NAME      = argv[1]
 ENTRY_FN_NAME = argv[2]
@@ -21,7 +22,7 @@ except:
 
 COMPILE_CMD = ' '.join([
   "clang",
-  "-cc1 -S -O2",
+  "-cc1 -S -O1",
   "-triple riscv32-unknown-unknown-elf",
   "-disable-free",
   "-disable-llvm-verifier",
@@ -54,32 +55,46 @@ assert exit_code == 0, "compilation failed"
 
 asm = None
 with open(ASM_PATH) as f:
-    asm = f.read()
+    asm = f.readlines()
 
-PRE_DECO = f"""
-	.text
-	.globl _start
-_start:
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	lui ra, %hi({ENTRY_FN_NAME})
-	jalr ra, ra, %lo({ENTRY_FN_NAME})
-.__end_loop:
-	j .__end_loop
-"""
-POST_DECO = """
-	.word 3735928559
-"""
+PRE_DECO = [
+    "	.text\n",
+    "	.globl _start\n",
+    "_start:\n",
+    "	nop\n",
+    "	nop\n",
+    "	nop\n",
+    "	nop\n",
+    "	nop\n",
+    "	nop\n",
+    "	nop\n",
+    "	nop\n",
+    "	nop\n",
+    f"	call {ENTRY_FN_NAME}\n",
+    ".__end_loop:\n",
+    "	j .__end_loop\n",
+]
+
+# Call psuedo instruction only emit one relocation directive, while we need two
+# of them to run correctly.
+def expand_calls(asm):
+    emitted = []
+    for i, line in enumerate(asm):
+        grp = re.match(r"\s+call\s+([a-zA-Z0-9_\.]+)", line)
+        if grp:
+            callee_name = grp[1]
+            emitted.append(f"	lui ra, %hi({callee_name})\n")
+            emitted.append(f"	jalr ra, ra, %lo({callee_name})\n")
+            print(f"replaced call instruction at line {i + 1} to lui-jalr pair")
+        else:
+            emitted.append(line)
+    return emitted
+
+asm = PRE_DECO + asm
+asm = expand_calls(asm)
+decorated_asm = ''.join(asm)
 
 with open(ASM_DECO_PATH, "w") as f:
-    decorated_asm = asm.replace(".text", PRE_DECO, 1) + POST_DECO
     f.write(decorated_asm)
 
 
@@ -112,7 +127,6 @@ def extract_section_table():
     section_size_map   = { "*ABS*": 0 }
     for line in lines:
         segs   = line.strip().split()
-        idx    = segs[0]
         name   = segs[1]
         size   = int(segs[2], 16)
         offset = int(segs[5], 16)
@@ -138,7 +152,7 @@ def extract_cmdbuf_content(section_offset_map, section_size_map, obj):
     sdata_content = obj[sdata_offset:(sdata_offset + sdata_size)]
     sbss_content  = obj[sbss_offset :(sbss_offset  + sbss_size )]
     data_content  = obj[data_offset :(data_offset  + data_size )]
-    content = text_content + sdata_content
+    content = text_content + sdata_content + sbss_content + data_content
     assert len(content) % 4 == 0, f"command buffer size must align to 4, but is {len(content)}"
 
     w0s = content[0::4]
@@ -225,6 +239,9 @@ def relocate_symbols(symbol_offset_map, words):
     with open(f"tmp/{ENTRY_FN_NAME}.relo.log") as f:
         lines = f.readlines()[5:]
 
+    # Let's check what instructions are using absolute offsets first.
+    # target instruction offset -> (is absolute, symbol offset)
+    instr_imm_map = {}
     for line in lines:
         segs = line.strip().split()
         if len(segs) == 0:
@@ -233,13 +250,25 @@ def relocate_symbols(symbol_offset_map, words):
         instr_offset = int(segs[0], 16)
         symbol = segs[2]
 
-        if symbol == "*ABS*":
-            print(f"ignored relocation of absolute base at {instr_offset}, which is already zero")
-
         assert instr_offset % 4 == 0, f"referer offset should align to 4 but is {instr_offset}"
         assert symbol in symbol_offset_map, f"unknown symbol '{symbol}' referred by 0x{instr_offset:08x}"
 
-        symbol_offset = symbol_offset_map[symbol]
+        if symbol == "*ABS*":
+            assert instr_offset in instr_imm_map, f"instruction at 0x{instr_offset:08x} is marked as absolute but has not been recorded yet"
+            (_, symbol_offset, symbol) = instr_imm_map[instr_offset]
+            instr_imm_map[instr_offset] = (True, symbol_offset, symbol)
+            print(f"marked instruction 0x{instr_offset:08x} be using an absolute address")
+        else:
+            assert instr_offset not in instr_imm_map, f"instruction at 0x{instr_offset:08x} is mapped to symbols for multiple times"
+            symbol_offset = symbol_offset_map[symbol]
+            instr_imm_map[instr_offset] = (False, symbol_offset, symbol)
+            print(f"scheduled relocation for instruction at 0x{instr_offset:08x} refering to {symbol}")
+
+    # Then we substitude the correct destination to instructions.
+    for instr_offset, (is_absolute, symbol_offset, symbol) in instr_imm_map.items():
+        if not is_absolute:
+            symbol_offset -= instr_offset
+
         imm20 = (symbol_offset - 1 + (1 << 11)) >> 12
         imm12 = (symbol_offset - (imm20 << 12)) & 0xfff
 
@@ -253,22 +282,22 @@ def relocate_symbols(symbol_offset_map, words):
             word += imm12 << 20
         elif opcode == 0x1b:
             # jal
-            a_imm20 = imm20 >> 19
-            b_imm20 = imm20 & 0b1111111111
-            c_imm20 = (imm20 >> 10) & 1
-            d_imm20 = (imm20 >> 11) & 0b11111111
+            a_imm20 = (imm20 >> 20) & 1
+            b_imm20 = (imm20 >>  1) & 0x3ff
+            c_imm20 = (imm20 >> 11) & 1
+            d_imm20 = (imm20 >> 12) & 0xff
             word += (a_imm20 << 31) | (b_imm20 << 21) | (c_imm20 << 20) | (d_imm20 << 12)
         elif opcode == 0x19:
             # jalr
             word += imm12 << 20
         elif opcode == 0x18:
             # beq, or other branch ops
-            imm12_align2 = (symbol_offset >> 1) & 0xfff
-            a_imm12_align2 = imm12_align2 >> 11
-            b_imm12_align2 = (imm12 >> 10) & 1
-            c_imm12_align2 = (imm12 >> 4) & 0b111111
-            d_imm12_align2 = imm12 & 0xf
-            word += (a_imm12_align2 << 31) | (b_imm12_align2 << 7) | (c_imm12_align2 << 8) | (d_imm12_align2 << 25)
+            imm12_align2 = symbol_offset & 0x1ffe
+            a_imm12_align2 = (imm12_align2 >> 12) & 1
+            b_imm12_align2 = (imm12_align2 >>  5) & 0b111111
+            c_imm12_align2 = (imm12_align2 >>  1) & 0b1111
+            d_imm12_align2 = (imm12_align2 >> 11) & 1
+            word += (a_imm12_align2 << 31) | (b_imm12_align2 << 25) | (c_imm12_align2 << 8) | (d_imm12_align2 << 7)
         elif opcode == 0x00 or opcode == 0x01:
             # lw, flw
             word += imm12 << 20
@@ -280,7 +309,8 @@ def relocate_symbols(symbol_offset_map, words):
         else:
             assert False, f"unsupported referer instruction with opcode 0x{opcode:02x} at 0x{instr_offset:08x} to {symbol}"
 
-        print(f"relocated reference to '{symbol}'\t({symbol_offset:08x}) by {instr_offset:08x}")
+        abs_lit = "absolute" if is_absolute else "relative"
+        print(f"relocated {abs_lit} reference to '{symbol}'\t({'-' if symbol_offset < 0 else '+'}{abs(symbol_offset):08x}) for instruction at 0x{instr_offset:08x}")
         words[instr_offset // 4] = word
 
 symbol_map = extract_symbol_table(section_size_map)
