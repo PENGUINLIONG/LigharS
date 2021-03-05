@@ -21,9 +21,6 @@ module XmmRegisterFile(
   assign read_data1 = inner[read_addr1];
   assign read_data2 = inner[read_addr2];
 
-  // All write access are done on negative edge.
-  wire write_to_zero = write_addr == 5'b0 ? 1 : 0;
-
   integer i;
   always @(posedge clk, posedge reset) begin
     if (reset) begin
@@ -34,7 +31,7 @@ module XmmRegisterFile(
   end
 
   always @(negedge clk) begin
-    if (should_write & !write_to_zero)
+    if (should_write)
       inner[write_addr] <= write_data;
     else
       inner[write_addr] <= inner[write_addr];
