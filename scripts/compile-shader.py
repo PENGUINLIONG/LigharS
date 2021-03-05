@@ -35,7 +35,7 @@ COMPILE_CMD = ' '.join([
   "-nostdsysteminc",
   "-target-feature +m",
   "-target-feature +f",
-  "-target-feature +relax",
+  "-target-feature +norelax",
   "-target-abi ilp32",
   "-fdeprecated-macro",
   "-fno-signed-char",
@@ -50,14 +50,13 @@ print(COMPILE_CMD)
 exit_code = system(COMPILE_CMD)
 assert exit_code == 0, "compilation failed"
 
-
 # 2. Assembly Decoration
 
 asm = None
 with open(ASM_PATH) as f:
     asm = f.read()
 
-PRE_DECO = """
+PRE_DECO = f"""
 	.text
 	.globl _start
 _start:
@@ -70,7 +69,7 @@ _start:
 	nop
 	nop
 	nop
-	call ray_gen
+	call {ENTRY_FN_NAME}
 .__end_loop:
 	j .__end_loop
 """
@@ -161,11 +160,18 @@ assert words[0] != 0xdeadbeef, "must set the stack pointer"
 # 5. Verilog Generation
 
 def word2instr(word):
-    return f"`i(32'h{word:08x});"
+    s = f"`i(32'b{word:032b});"
+    a = s[:-14]
+    b = s[-14:-9]
+    c = s[-9:-4]
+    d = s[-4:]
+    return '_'.join([a, b, c, d])
 
 instrs = []
-for word in words:
-    instrs += [word2instr(word)]
+for i, word in enumerate(words):
+    if i == 12:
+        instrs += ["// Main text starts from here."]
+    instrs += [word2instr(word) + f" // @ 0x{i * 4:08x}"]
 
 OUTPUT_VERILOG = """`timescale 1ns/1ps
 
@@ -246,7 +252,7 @@ module tb_Riscv();
           in_entry = 1;
         end
 
-        $display("ISSUEING INSTRUCTION: %b %h %b", instr[31:7], instr[6:2], instr[1:0]);
+        $display("ISSUEING INSTRUCTION: %b %h %b @ %h", instr[31:7], instr[6:2], instr[1:0], instr_addr);
       end
     end
   end
