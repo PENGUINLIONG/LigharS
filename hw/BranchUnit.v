@@ -12,7 +12,8 @@
 // |___________|_____________________________________________|
 module BranchUnit(
   input [1:0] branch_op,
-  input [31:0] branch_addr,
+  input [31:0] branch_base_data,
+  input [31:0] branch_offset_data,
   input [31:0] instr_addr,
   input alu_res_is_zero,
 
@@ -21,6 +22,6 @@ module BranchUnit(
 
   wire take_branch = (branch_op[0] & ~alu_res_is_zero) | (branch_op[1] & alu_res_is_zero);
 
-  assign next_pc = take_branch ? branch_addr : instr_addr + 4;
+  assign next_pc = take_branch ? branch_base_data + branch_offset_data : instr_addr + 4;
 
 endmodule

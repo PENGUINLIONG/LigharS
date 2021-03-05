@@ -54,7 +54,6 @@ wire no_update = fpu_busy;
 
 assign data_addr = alu_res;
 
-wire [31:0] branch_addr = branch_base_data + branch_offset_data;
 wire alu_res_is_zero = alu_res == 0 ? 1 : 0;
 
 
@@ -197,7 +196,8 @@ Fpu fpu(`MEM_LIKE_MODULE
 BranchUnit branch_unit(`COMB_ONLY_MODULE
   // in
   .branch_op(branch_op),
-  .branch_addr(branch_addr),
+  .branch_base_data(branch_base_data),
+  .branch_offset_data(branch_offset_data),
   .instr_addr(instr_addr),
   .alu_res_is_zero(alu_res_is_zero),
   // out
