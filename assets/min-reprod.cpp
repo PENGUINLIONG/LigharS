@@ -89,13 +89,13 @@ inline Vec3 clamp(const Vec3& c, f32 mn, f32 mx) {
   };
 }
 inline Vec3 reflect(Vec3 i, Vec3 n) {
-  return 2.0 * n * dot(n, i) - i;
+  return 2.0f * n * dot(n, i) - i;
 }
 inline u32 pack_unorm4_rgba(const Vec3& x) {
-  Vec3 clamped = clamp(x, 0, 1);
-  return ((u32)(clamped.x * 255.999)) |
-    ((u32)(clamped.y * 255.999) << 8) |
-    ((u32)(clamped.z * 255.999) << 16) |
+  Vec3 clamped = clamp(x, 0.0f, 1.0f);
+  return ((u32)(clamped.x * 255.999f)) |
+    ((u32)(clamped.y * 255.999f) << 8) |
+    ((u32)(clamped.z * 255.999f) << 16) |
     0xff000000;
 }
 
@@ -275,8 +275,8 @@ bool trace(const Ray& ray, u32 itri, u32 depth, Vec3& color) {
 }
 
 extern "C" u32 ray_gen(u32 w, u32 h, u32 edge) {
-  f32 x = ((f32)w) / ((f32)edge / 2.0f) - 1.0;
-  f32 y = ((f32)h) / ((f32)edge / 2.0f) - 1.0;
+  f32 x = ((f32)w) / ((f32)edge / 2.0f) - 1.0f;
+  f32 y = ((f32)h) / ((f32)edge / 2.0f) - 1.0f;
 
   Ray ray {
       Vec3 { x, y, 0.0f },
