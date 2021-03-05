@@ -8,3 +8,8 @@ extern "C" u32 test_fadd(u32 a, u32 b) {
   u32 rv = a2 + b2;
   return rv;
 }
+
+extern "C" u32 test_add(u32 a, u32 b) {
+  u32 rv = a + b;
+  return rv;
+}

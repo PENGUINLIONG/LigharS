@@ -226,9 +226,10 @@ def relocate_symbols(symbol_offset_map, words):
         assert symbol in symbol_offset_map, f"unknown symbol '{symbol}' referred by 0x{instr_offset:08x}"
 
         symbol_offset = symbol_offset_map[symbol]
+        imm20 = (symbol_offset - 1 + (1 << 11)) >> 12
+        imm12 = (symbol_offset - (imm20 << 12)) & 0xfff
 
-        imm20 = (symbol_offset - 1 + (1 << 12)) >> 20
-        imm12 = (symbol_offset - (imm20 << 20)) & 0xffffffff
+        print(imm20, imm12)
 
         word = words[instr_offset // 4]
         opcode = (word >> 2) & 0b11111
@@ -257,7 +258,6 @@ def relocate_symbols(symbol_offset_map, words):
             lower_imm12 = imm12 & 0b11111
             word += (upper_imm12 << 20) | (lower_imm12 << 2)
         else:
-            print(word)
             assert False, f"unsupported referer instruction with opcode 0x{opcode:02x} at 0x{instr_offset:08x} to {symbol}"
 
         print(f"relocated reference to '{symbol}'\t({symbol_offset:08x}) by {instr_offset:08x}")
@@ -284,10 +284,16 @@ def set_param(cmdbuf, iparam, value):
     cmdbuf[iparam + 1] = param2word(iparam, value)
 def set_stack_ptr(cmdbuf, value):
     cmdbuf[0] = stack_ptr2word(value)
+def set_entry_fn(symbol_offset_map):
+    entry_offset = symbol_offset_map[ENTRY_FN_NAME]
+    imm20 = ((entry_offset - 1 + (1 << 12)) >> 12) << 12
+    cmdbuf[9] = 0b00000000000000000000_00010_0110111 + imm20 # lui
+    cmdbuf[10] = 0b000000000000_00001_000_00001_1100111 + (((entry_offset - imm20) & 0xfff) << 20) # jalr
 
 set_stack_ptr(cmdbuf, 4096)
 for i, arg in enumerate(THREAD_ARGS):
     set_param(cmdbuf, i, int(arg))
+set_entry_fn(symbol_offset_map)
 
 assert cmdbuf[0] != 0xdeadbeef, "must set the stack pointer"
 
