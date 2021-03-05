@@ -35,7 +35,7 @@ COMPILE_CMD = ' '.join([
   "-nostdsysteminc",
   "-target-feature +m",
   "-target-feature +f",
-  "-target-feature +norelax",
+  "-target-feature +relax",
   "-target-abi ilp32",
   "-fdeprecated-macro",
   "-fno-signed-char",
@@ -46,7 +46,7 @@ COMPILE_CMD = ' '.join([
   SRC_PATH,
 ])
 
-print(COMPILE_CMD)
+#print(COMPILE_CMD)
 exit_code = system(COMPILE_CMD)
 assert exit_code == 0, "compilation failed"
 
@@ -60,7 +60,6 @@ PRE_DECO = f"""
 	.text
 	.globl _start
 _start:
-	.word 3735928559
 	nop
 	nop
 	nop
@@ -69,7 +68,9 @@ _start:
 	nop
 	nop
 	nop
-	call {ENTRY_FN_NAME}
+	nop
+	lui ra, %hi({ENTRY_FN_NAME})
+	jalr ra, ra, %lo({ENTRY_FN_NAME})
 .__end_loop:
 	j .__end_loop
 """
@@ -92,33 +93,184 @@ ASSEMBLE_CMD = ' '.join([
   "-o", OUT_PATH,
 ])
 
-print(ASSEMBLE_CMD)
+#print(ASSEMBLE_CMD)
 exit_code = system(ASSEMBLE_CMD)
 assert exit_code == 0, "assembly failed"
 
 
-# 4. Machine Code Decoration
+# 4. Extract Command Buffer Content
+
+def extract_section_table():
+    exit_code = system(f"objdump -h {OUT_PATH} > tmp/{ENTRY_FN_NAME}.sec.log")
+    assert exit_code == 0, "cannot dump section table from compiled object"
+
+    lines = None
+    with open(f"tmp/{ENTRY_FN_NAME}.sec.log") as f:
+        lines = f.readlines()[5::2]
+
+    section_offset_map = { "*ABS*": 0 }
+    section_size_map   = { "*ABS*": 0 }
+    for line in lines:
+        segs   = line.strip().split()
+        idx    = segs[0]
+        name   = segs[1]
+        size   = int(segs[2], 16)
+        offset = int(segs[5], 16)
+
+        section_offset_map[name] = offset
+        section_size_map[name]   = size
+        print(f"discovered section {name}:\toffset={offset}, size={size}")
+
+    return section_offset_map, section_size_map
+
+def extract_cmdbuf_content(section_offset_map, section_size_map, obj):
+    text_offset  = section_offset_map[".text"]  if ".text"  in section_offset_map else 0
+    sdata_offset = section_offset_map[".sdata"] if ".sdata" in section_offset_map else 0
+    text_size  = section_size_map[".text"]  if ".text"  in section_size_map else 0
+    sdata_size = section_size_map[".sdata"] if ".sdata" in section_size_map else 0
+    assert text_size != 0, "no instruction to run in this shader"
+
+    text_content  = obj[text_offset:(text_offset + text_size)]
+    sdata_content = obj[sdata_offset:(sdata_offset + sdata_size)]
+    content = text_content + sdata_content
+    assert len(content) % 4 == 0, f"command buffer size must align to 4, but is {len(content)}"
+
+    w0s = content[0::4]
+    w1s = content[1::4]
+    w2s = content[2::4]
+    w3s = content[3::4]
+    cmdbuf = [(w0s[i] << 0) + (w1s[i] << 8) + (w2s[i] << 16) + (w3s[i] << 24) for i in range(len(content) // 4)]
+    print(f"collected command buffer of {len(cmdbuf)} words")
+
+    return cmdbuf
 
 obj = None
 with open(OUT_PATH, 'rb') as f:
     obj = f.read()
 
-beg = obj.find(bytes([0xef, 0xbe, 0xad, 0xde]))
-end = obj.find(bytes([0xef, 0xbe, 0xad, 0xde]), beg + 4)
-
-print(f"found program text from {beg:08x} to {end:08x}")
-text = obj[beg:end]
+section_offset_map, section_size_map = extract_section_table()
+cmdbuf = extract_cmdbuf_content(section_offset_map, section_size_map, obj)
 
 
-assert len(text) % 4 == 0, f"executable size must align to 4, but is {len(text)}"
-NINSTR_SLOT = 3
+# 5. Offline Relocation
 
-w0s = text[0::4]
-w1s = text[1::4]
-w2s = text[2::4]
-w3s = text[3::4]
+# Usually this is done by library loaders of operating systems, but as long as
+# we are just compiling for the binary code, we can apply the relocation offline
+# here. But sadly there seems no existing tool to save such labor.
 
-words = [(w0s[i] << 0) + (w1s[i] << 8) + (w2s[i] << 16) + (w3s[i] << 24) for i in range(len(text) // 4)]
+def extract_symbol_table(section_size_map):
+    exit_code = system(f"objdump -t {OUT_PATH} > tmp/{ENTRY_FN_NAME}.sym.log")
+    assert exit_code == 0, "cannot dump symbol table from compiled object"
+
+    lines = None
+    with open(f"tmp/{ENTRY_FN_NAME}.sym.log") as f:
+        lines = f.readlines()[4:]
+
+    symbol_map = { "*ABS*": ("*ABS*", 0) }
+    for line in lines:
+        segs = line.strip().split()
+        if len(segs) == 0:
+            continue
+        if len(segs) == 5:
+            segs.insert(2, '')
+        offset = int(segs[0], 16)
+        section = segs[3]
+        name = segs[-1]
+
+        symbol_map[name] = (section, offset)
+        print(f"discovered symbol {name}\t@{section}+{offset}")
+
+    return symbol_map
+
+def map_symbol_offsets(section_size_map, symbol_map):
+    text_size  = section_size_map[".text"]  if ".text"  in section_size_map else 0
+    sdata_size = section_size_map[".sdata"] if ".sdata" in section_size_map else 0
+
+    assert text_size != 0, "no instruction to run in this shader"
+
+    text_offset  = 0
+    sdata_offset = text_size
+    symbol_offset_map = {}
+    for symbol, (section, offset) in symbol_map.items():
+        if section == "*ABS*":
+            symbol_offset_map[symbol] = offset
+        elif section == ".text":
+            symbol_offset_map[symbol] = text_offset + offset
+        elif section == ".sdata":
+            symbol_offset_map[symbol] = sdata_offset + offset
+        else:
+            assert False, f"unsupported data section {section}"
+
+    return symbol_offset_map
+
+def relocate_symbols(symbol_offset_map, words):
+    exit_code = system(f"objdump -r {OUT_PATH} > tmp/{ENTRY_FN_NAME}.relo.log")
+    assert exit_code == 0, "cannot dump relocation table from entry point"
+
+    lines = None
+    with open(f"tmp/{ENTRY_FN_NAME}.relo.log") as f:
+        lines = f.readlines()[5:]
+
+    for line in lines:
+        segs = line.strip().split()
+        if len(segs) == 0:
+            continue
+
+        instr_offset = int(segs[0], 16)
+        symbol = segs[2]
+
+        if symbol == "*ABS*":
+            print(f"ignored relocation of absolute base at {instr_offset}, which is already zero")
+
+        assert instr_offset % 4 == 0, f"referer offset should align to 4 but is {instr_offset}"
+        assert symbol in symbol_offset_map, f"unknown symbol '{symbol}' referred by 0x{instr_offset:08x}"
+
+        symbol_offset = symbol_offset_map[symbol]
+
+        imm20 = (symbol_offset - 1 + (1 << 12)) >> 20
+        imm12 = (symbol_offset - (imm20 << 20)) & 0xffffffff
+
+        word = words[instr_offset // 4]
+        opcode = (word >> 2) & 0b11111
+        if opcode == 0x0D or opcode == 0x05:
+            # lui, auipc
+            word += imm20 << 12
+        elif opcode == 0x04:
+            # addi, or other adder
+            word += imm12 << 20
+        elif opcode == 0x1b:
+            # jal
+            a_imm20 = imm20 >> 19
+            b_imm20 = imm20 & 0b1111111111
+            c_imm20 = (imm20 >> 10) & 1
+            d_imm20 = (imm20 >> 11) & 0b11111111
+            word += (a_imm20 << 31) | (b_imm20 << 21) | (c_imm20 << 20) | (d_imm20 << 12)
+        elif opcode == 0x19:
+            # jalr
+            word += imm12 << 20
+        elif opcode == 0x00 or opcode == 0x01:
+            # lw, flw
+            word += imm12 << 20
+        elif opcode == 0x08:
+            # sw
+            upper_imm12 = imm12 >> 5
+            lower_imm12 = imm12 & 0b11111
+            word += (upper_imm12 << 20) | (lower_imm12 << 2)
+        else:
+            print(word)
+            assert False, f"unsupported referer instruction with opcode 0x{opcode:02x} at 0x{instr_offset:08x} to {symbol}"
+
+        print(f"relocated reference to '{symbol}'\t({symbol_offset:08x}) by {instr_offset:08x}")
+        words[instr_offset // 4] = word
+
+symbol_map = extract_symbol_table(section_size_map)
+symbol_offset_map = map_symbol_offsets(section_size_map, symbol_map)
+relocate_symbols(symbol_offset_map, cmdbuf)
+
+
+# 6. Machine Code Decoration
+
+# Set-up stack pointers and launch parameters.
 
 def param2word(iparam, value):
     assert iparam < 8, "can have at most 8 parameters"
@@ -128,36 +280,19 @@ def stack_ptr2word(value):
     assert value % (1 << 12) == 0, "base stack pointer must align to 4KB (4096B)"
     assert (value >> 32) == 0, "stack pointer is too far away"
     return 0b00000000000000000000_00010_0110111 + value # lui
-def set_param(iparam, value):
-    words[iparam + 1] = param2word(iparam, value)
-def set_stack_ptr(value):
-    words[0] = stack_ptr2word(value)
-def set_entry_fn(entry_fn):
-    exit_code = system(f"objdump -t {OUT_PATH} | grep {entry_fn} > tmp/objdump.log")
-    assert exit_code == 0, "objdump failed"
-    entry_offset = None
-    with open("tmp/objdump.log") as f:
-      line = f.readline().strip()
-      assert len(line) != 0, f"failed to locate entry point {entry_fn}"
-      entry_offset = int(line.split()[0], 16)
-    imm20 = ((entry_offset - 1 + (1 << 12)) >> 12) << 12
-    words[9] = 0b00000000000000000000_00010_0110111 + imm20 # lui
-    words[10] = 0b000000000000_00001_000_00001_1100111 + (((entry_offset - imm20) & 0xfff) << 20) # jalr
+def set_param(cmdbuf, iparam, value):
+    cmdbuf[iparam + 1] = param2word(iparam, value)
+def set_stack_ptr(cmdbuf, value):
+    cmdbuf[0] = stack_ptr2word(value)
 
-
-# Set-up stack pointers and launch parameters
-set_stack_ptr(4096)
+set_stack_ptr(cmdbuf, 4096)
 for i, arg in enumerate(THREAD_ARGS):
-  set_param(i, int(arg))
-# For some reason `clang` simply fails to inject the correct address for the
-# jump, so we force the instructions instead.
-set_entry_fn(ENTRY_FN_NAME)
+    set_param(cmdbuf, i, int(arg))
 
-assert words[0] != 0xdeadbeef, "must set the stack pointer"
+assert cmdbuf[0] != 0xdeadbeef, "must set the stack pointer"
 
 
-
-# 5. Verilog Generation
+# 7. Verilog Generation
 
 def word2instr(word):
     s = f"`i(32'b{word:032b});"
@@ -168,7 +303,7 @@ def word2instr(word):
     return '_'.join([a, b, c, d])
 
 instrs = []
-for i, word in enumerate(words):
+for i, word in enumerate(cmdbuf):
     if i == 12:
         instrs += ["// Main text starts from here."]
     instrs += [word2instr(word) + f" // @ 0x{i * 4:08x}"]
