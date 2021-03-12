@@ -30,7 +30,7 @@ module Q15Multiplier (
   wire signed [63:0]  product = product_extended[111:48];
 
   wire product_sign  = product[63];
-  wire expected_sign = a_sign ^ b_sign;
+  wire expected_sign = (a_sign ^ b_sign) & !a_zero & !b_zero;
   wire overflow = a_inf | b_inf | (product_sign != expected_sign ? 1 : 0);
 
   wire nan = a_nan | b_nan | (a_inf & b_inf);

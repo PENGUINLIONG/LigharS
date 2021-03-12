@@ -2,6 +2,7 @@
 from os import system, mkdir
 from sys import argv
 import re
+import bitstring
 
 SRC_NAME      = argv[1]
 ENTRY_FN_NAME = argv[2]
@@ -458,6 +459,10 @@ module tb_Riscv();
 
         if (uut.fpu.nan) begin
           $display("FPU NAN INTERRUPTION");
+          $finish;
+        end
+        if (uut.fpu.inf) begin
+          $display("FPU INF INTERRUPTION");
           $finish;
         end
       end

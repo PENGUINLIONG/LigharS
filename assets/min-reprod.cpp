@@ -11,16 +11,20 @@ f32 random() {
 
 f32 sin(f32 x) {
   f32 x2 = x * x;
-  f32 x3 = x2 * x;
-  f32 x5 = x3 * x2;
-  return 1.0f * x - x3 / 6.0f + x5 / 120.0f;
+
+  f32 coe_x1 = 1.0f * x;
+  f32 coe_x3 = x2 / 6.0f * x;
+  f32 coe_x5 = coe_x3 / 20.0f * x2;
+
+  return coe_x1 - coe_x3 + coe_x5;
 }
 f32 cos(f32 x) {
   f32 x2 = x * x;
-  f32 x4 = x2 * x2;
-  f32 x6 = x4 * x2;
-  f32 x8 = x4 * x4;
-  return 1.0f - x2 / 4.0f + x4 / 24.0f - x6 / 720.0f + x8 / 40320.0f;
+
+  f32 coe_x2 = x2 / 4.0f;
+  f32 coe_x4 = coe_x2 / 6.0f * x2;
+  f32 coe_x6 = coe_x4 / 30.0f * x2;
+  return 1.0f - coe_x2 + coe_x4 - coe_x6;
 }
 f32 sqrt(f32 x) {
   f32 xhalf = 0.5f * x;
@@ -30,6 +34,7 @@ f32 sqrt(f32 x) {
   x = x * (1.5f - xhalf * x * x);
   return 1 / x;
 }
+// FIXME: bxx series instruction are malfunctioning.
 f32 max(f32 a, f32 b) {
   return a > b ? a : b;
 }
@@ -231,7 +236,7 @@ extern "C" bool trace(const Ray& ray, u32 itri, u32 depth, Vec3& color) {
   f32 u = (d11 * d20 - d01 * d21) / denom;
   f32 v = (d00 * d21 - d01 * d20) / denom;
 
-  if (u < 0.0f || v < 0.0f || u + v > 1.0f) { return false; }
+  if (u < 0.0f || v < 0.0f || 1.0f < u + v) { return false; }
 
   // Calculate light.
   const u32 NRAY = 16;
