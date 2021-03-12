@@ -310,10 +310,10 @@ def relocate_symbols(symbol_offset_map, words):
             # lw, flw
             word += imm12 << 20
         elif opcode == 0x08:
-            # sw
+            # sw, fsw
             upper_imm12 = imm12 >> 5
             lower_imm12 = imm12 & 0b11111
-            word += (upper_imm12 << 20) | (lower_imm12 << 2)
+            word += (upper_imm12 << 25) | (lower_imm12 << 7)
         else:
             assert False, f"unsupported referer instruction with opcode 0x{opcode:02x} at 0x{instr_offset:08x} to {symbol}"
 
