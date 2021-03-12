@@ -75,6 +75,7 @@ module Fpu (
   wire b_sign = b_data[63];
   wire [63:0] unsigned_a_data = a_sign ? -a_data : a_data;
 
+  wire nan = fpu_res == 64'h8000000000000000 ? 1 : 0;
   assign busy = div_busy;
   assign fpu_res =
     fpu_op == 4'b0000 ? sum :

@@ -455,6 +455,11 @@ module tb_Riscv();
             $display("ISSUEING INSTRUCTION: %b %h %b @ %h", instr[31:7], instr[6:2], instr[1:0], instr_addr);
             in_entry = in_entry; // So we can set break points.
         end
+
+        if (uut.fpu.nan) begin
+          $display("FPU NAN INTERRUPTION");
+          $finish;
+        end
       end
     end
   end
