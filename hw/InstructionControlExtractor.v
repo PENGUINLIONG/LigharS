@@ -166,7 +166,7 @@ module InstructionControlExtractor(
       // ## Floating-point Memory Write Access
       //
       // A word in `xs2` will be written back to address position `rs1 + imm12`.
-      5'h08: begin
+      5'h09: begin
         should_read_mem        <= 0;
         should_write_mem       <= 1;
         should_write_reg       <= 0;
