@@ -138,21 +138,24 @@ def extract_section_table():
     return section_offset_map, section_size_map
 
 def extract_cmdbuf_content(section_offset_map, section_size_map, obj):
-    text_offset  = section_offset_map[".text"]  if ".text"  in section_offset_map else 0
-    sdata_offset = section_offset_map[".sdata"] if ".sdata" in section_offset_map else 0
-    sbss_offset  = section_offset_map[".sbss"]  if ".sbss"  in section_offset_map else 0
-    data_offset  = section_offset_map[".data"]  if ".data"  in section_offset_map else 0
-    text_size  = section_size_map[".text"]  if ".text"  in section_size_map else 0
-    sdata_size = section_size_map[".sdata"] if ".sdata" in section_size_map else 0
-    sbss_size  = section_size_map[".sbss"]  if ".sbss"  in section_size_map else 0
-    data_size  = section_size_map[".data"]  if ".data"  in section_size_map else 0
+    text_offset    = section_offset_map[".text"]    if ".text"    in section_offset_map else 0
+    sdata_offset   = section_offset_map[".sdata"]   if ".sdata"   in section_offset_map else 0
+    sbss_offset    = section_offset_map[".sbss"]    if ".sbss"    in section_offset_map else 0
+    data_offset    = section_offset_map[".data"]    if ".data"    in section_offset_map else 0
+    rodata_offset  = section_offset_map[".rodata"]  if ".rodata"  in section_offset_map else 0
+    text_size    = section_size_map[".text"]    if ".text"    in section_size_map else 0
+    sdata_size   = section_size_map[".sdata"]   if ".sdata"   in section_size_map else 0
+    sbss_size    = section_size_map[".sbss"]    if ".sbss"    in section_size_map else 0
+    data_size    = section_size_map[".data"]    if ".data"    in section_size_map else 0
+    rodata_size  = section_size_map[".rodata"]  if ".rodata"  in section_size_map else 0
     assert text_size != 0, "no instruction to run in this shader"
-
-    text_content  = obj[text_offset :(text_offset  + text_size )]
-    sdata_content = obj[sdata_offset:(sdata_offset + sdata_size)]
-    sbss_content  = obj[sbss_offset :(sbss_offset  + sbss_size )]
-    data_content  = obj[data_offset :(data_offset  + data_size )]
-    content = text_content + sdata_content + sbss_content + data_content
+  
+    text_content    = obj[text_offset   :(text_offset    + text_size   )]
+    sdata_content   = obj[sdata_offset  :(sdata_offset   + sdata_size  )]
+    sbss_content    = obj[sbss_offset   :(sbss_offset    + sbss_size   )]
+    data_content    = obj[data_offset   :(data_offset    + data_size   )]
+    rodata_content  = obj[rodata_offset :(rodata_offset  + rodata_size )]
+    content = text_content + sdata_content + sbss_content + data_content + rodata_content
     assert len(content) % 4 == 0, f"command buffer size must align to 4, but is {len(content)}"
 
     w0s = content[0::4]
@@ -203,29 +206,33 @@ def extract_symbol_table(section_size_map):
     return symbol_map
 
 def map_symbol_offsets(section_size_map, symbol_map):
-    text_size  = section_size_map[".text"]  if ".text"  in section_size_map else 0
-    sdata_size = section_size_map[".sdata"] if ".sdata" in section_size_map else 0
-    sbss_size  = section_size_map[".sbss"]  if ".sbss"  in section_size_map else 0
-    data_size  = section_size_map[".data"]  if ".data"  in section_size_map else 0
+    text_size   = section_size_map[".text"]   if ".text"   in section_size_map else 0
+    sdata_size  = section_size_map[".sdata"]  if ".sdata"  in section_size_map else 0
+    sbss_size   = section_size_map[".sbss"]   if ".sbss"   in section_size_map else 0
+    data_size   = section_size_map[".data"]   if ".data"   in section_size_map else 0
+    rodata_size = section_size_map[".rodata"] if ".rodata" in section_size_map else 0
 
     assert text_size != 0, "no instruction to run in this shader"
 
-    text_offset  = 0
-    sdata_offset = text_offset  + text_size
-    sbss_offset  = sdata_offset + sdata_size
-    data_offset  = sbss_offset + sbss_size
+    text_offset    = 0
+    sdata_offset   = text_offset  + text_size
+    sbss_offset    = sdata_offset + sdata_size
+    data_offset    = sbss_offset + sbss_size
+    rodata_offset  = data_offset + data_size
     symbol_offset_map = {}
     for symbol, (section, offset) in symbol_map.items():
         if section == "*ABS*":
             symbol_offset_map[symbol] = offset
         elif section == ".text":
-            symbol_offset_map[symbol] = text_offset  + offset
+            symbol_offset_map[symbol] = text_offset   + offset
         elif section == ".sdata":
-            symbol_offset_map[symbol] = sdata_offset + offset
+            symbol_offset_map[symbol] = sdata_offset  + offset
         elif section == ".sbss":
-            symbol_offset_map[symbol] = sbss_offset  + offset
+            symbol_offset_map[symbol] = sbss_offset   + offset
         elif section == ".data":
-            symbol_offset_map[symbol] = data_offset  + offset
+            symbol_offset_map[symbol] = data_offset   + offset
+        elif section == ".rodata":
+            symbol_offset_map[symbol] = rodata_offset + offset
         else:
             assert False, f"unsupported data section {section}"
 
@@ -341,7 +348,7 @@ def set_entry_fn(symbol_offset_map):
     cmdbuf[9] = 0b00000000000000000000_00010_0110111 + imm20 # lui
     cmdbuf[10] = 0b000000000000_00001_000_00001_1100111 + (((entry_offset - imm20) & 0xfff) << 20) # jalr
 
-set_stack_ptr(cmdbuf, 4096)
+set_stack_ptr(cmdbuf, 8192)
 for i, arg in enumerate(THREAD_ARGS):
     set_param(cmdbuf, i, int(arg))
 #set_entry_fn(symbol_offset_map)

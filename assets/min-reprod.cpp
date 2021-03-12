@@ -1,7 +1,7 @@
 typedef float f32;
 typedef unsigned int u32;
 
-inline f32 random() {
+f32 random() {
   static u32 seed = 0;
   seed *= 0x5deece66d;
   seed += 0xb;
@@ -9,20 +9,20 @@ inline f32 random() {
   return *((f32*)((void*)(&rv)));
 }
 
-inline f32 sin(f32 x) {
+f32 sin(f32 x) {
   f32 x2 = x * x;
   f32 x3 = x2 * x;
   f32 x5 = x3 * x2;
   return 1.0f * x - x3 / 6.0f + x5 / 120.0f;
 }
-inline f32 cos(f32 x) {
+f32 cos(f32 x) {
   f32 x2 = x * x;
   f32 x4 = x2 * x2;
   f32 x6 = x4 * x2;
   f32 x8 = x4 * x4;
   return 1.0f - x2 / 4.0f + x4 / 24.0f - x6 / 720.0f + x8 / 40320.0f;
 }
-inline f32 sqrt(f32 x) {
+f32 sqrt(f32 x) {
   f32 xhalf = 0.5f * x;
   int i = *(int*)&x;
   i = 0x5f3759df - (i >> 1);
@@ -30,10 +30,10 @@ inline f32 sqrt(f32 x) {
   x = x * (1.5f - xhalf * x * x);
   return 1 / x;
 }
-inline f32 max(f32 a, f32 b) {
+f32 max(f32 a, f32 b) {
   return a > b ? a : b;
 }
-inline f32 min(f32 a, f32 b) {
+f32 min(f32 a, f32 b) {
   return a < b ? a : b;
 }
 
@@ -41,57 +41,57 @@ inline f32 min(f32 a, f32 b) {
 struct Vec3 {
   f32 x, y, z;
 };
-inline Vec3 operator+(const Vec3& a, const Vec3& b) {
+Vec3 operator+(const Vec3& a, const Vec3& b) {
   return { a.x + b.x, a.y + b.y, a.z + b.z };
 }
-inline Vec3 operator-(const Vec3& a, const Vec3& b) {
+Vec3 operator-(const Vec3& a, const Vec3& b) {
   return { a.x - b.x, a.y - b.y, a.z - b.z };
 }
-inline Vec3 operator-(const Vec3& a) {
+Vec3 operator-(const Vec3& a) {
   return { -a.x, -a.y, -a.z };
 }
-inline Vec3 operator*(const Vec3& a, f32 b) {
+Vec3 operator*(const Vec3& a, f32 b) {
   return { a.x * b, a.y * b, a.z * b };
 }
-inline Vec3 operator*(f32 a, const Vec3& b) {
+Vec3 operator*(f32 a, const Vec3& b) {
   return { a * b.x, a * b.y, a * b.z };
 }
-inline Vec3 operator*(const Vec3& a, const Vec3& b) {
+Vec3 operator*(const Vec3& a, const Vec3& b) {
   return { a.x * b.x, a.y * b.y, a.z * b.z };
 }
-inline Vec3 operator/(const Vec3& a, f32 b) {
+Vec3 operator/(const Vec3& a, f32 b) {
   return { a.x / b, a.y / b, a.z / b };
 }
-inline Vec3 operator/(const Vec3& a, const Vec3& b) {
+Vec3 operator/(const Vec3& a, const Vec3& b) {
   return { a.x / b.x, a.y / b.y, a.z / b.z };
 }
-inline f32 dot(const Vec3& a, const Vec3& b) {
+f32 dot(const Vec3& a, const Vec3& b) {
   return a.x * b.x + a.y * b.y + a.z * b.z;
 }
-inline Vec3 cross(const Vec3& a, const Vec3& b) {
+Vec3 cross(const Vec3& a, const Vec3& b) {
   return Vec3 {
     a.y * b.z - a.z * b.y,
     a.z * b.x - a.x * b.z,
     a.x * b.y - a.y * b.x,
   };
 }
-inline f32 magnitude(const Vec3& a) {
+f32 magnitude(const Vec3& a) {
   return sqrt(dot(a, a));
 }
-inline Vec3 normalized(const Vec3& a) {
+Vec3 normalized(const Vec3& a) {
   return a / magnitude(a);
 }
-inline Vec3 clamp(const Vec3& c, f32 mn, f32 mx) {
+Vec3 clamp(const Vec3& c, f32 mn, f32 mx) {
   return {
     max(min(c.x, mx), mn),
     max(min(c.y, mx), mn),
     max(min(c.z, mx), mn),
   };
 }
-inline Vec3 reflect(Vec3 i, Vec3 n) {
+Vec3 reflect(Vec3 i, Vec3 n) {
   return 2.0f * n * dot(n, i) - i;
 }
-inline u32 pack_unorm4_rgba(const Vec3& x) {
+u32 pack_unorm4_rgba(const Vec3& x) {
   Vec3 clamped = clamp(x, 0.0f, 1.0f);
   return ((u32)(clamped.x * 255.999f)) |
     ((u32)(clamped.y * 255.999f) << 8) |
@@ -193,10 +193,10 @@ Material mats[] {
 
 
 
-bool traverse(const Ray& ray, u32 depth, Vec3& color);
-bool trace(const Ray& ray, u32 itri, u32 depth, Vec3& color);
+extern "C" bool traverse(const Ray& ray, u32 depth, Vec3& color);
+extern "C" bool trace(const Ray& ray, u32 itri, u32 depth, Vec3& color);
 
-bool traverse(const Ray& ray, u32 depth, Vec3& color) {
+extern "C" bool traverse(const Ray& ray, u32 depth, Vec3& color) {
   const u32 NTRI = sizeof(mats) / sizeof(Material);
   for (u32 itri = 0; itri < NTRI; ++itri) {
     if (trace(ray, itri, depth, color)) { return true; }
@@ -204,7 +204,7 @@ bool traverse(const Ray& ray, u32 depth, Vec3& color) {
   return false;
 }
 
-bool trace(const Ray& ray, u32 itri, u32 depth, Vec3& color) {
+extern "C" bool trace(const Ray& ray, u32 itri, u32 depth, Vec3& color) {
   const Triangle& tri = tris[itri];
 
   // Check for hit.
