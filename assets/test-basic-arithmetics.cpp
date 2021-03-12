@@ -28,6 +28,16 @@ extern "C" u32 test_fdiv(u32 a, u32 b) {
   return rv;
 }
 
+extern "C" u32 test_flt(u32 a, u32 b) {
+  return a < b ? 1 : 0;
+}
+extern "C" u32 test_fle(u32 a, u32 b) {
+  return a <= b ? 1 : 0;
+}
+extern "C" u32 test_feq(u32 a, u32 b) {
+  return a == b ? 1 : 0;
+}
+
 extern "C" u32 test_add(u32 a, u32 b) {
   u32 rv = a + b;
   return rv;
