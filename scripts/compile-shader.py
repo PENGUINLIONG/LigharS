@@ -282,11 +282,12 @@ def relocate_symbols(symbol_offset_map, words):
             word += imm12 << 20
         elif opcode == 0x1b:
             # jal
-            a_imm20 = (imm20 >> 20) & 1
-            b_imm20 = (imm20 >>  1) & 0x3ff
-            c_imm20 = (imm20 >> 11) & 1
-            d_imm20 = (imm20 >> 12) & 0xff
-            word += (a_imm20 << 31) | (b_imm20 << 21) | (c_imm20 << 20) | (d_imm20 << 12)
+            imm20_align2 = symbol_offset & 0x1ffffe
+            a_imm20_align2 = (imm20_align2 >> 20) & 1
+            b_imm20_align2 = (imm20_align2 >>  1) & 0x3ff
+            c_imm20_align2 = (imm20_align2 >> 11) & 1
+            d_imm20_align2 = (imm20_align2 >> 12) & 0xff
+            word += (a_imm20_align2 << 31) | (b_imm20_align2 << 21) | (c_imm20_align2 << 20) | (d_imm20_align2 << 12)
         elif opcode == 0x19:
             # jalr
             word += imm12 << 20
@@ -443,7 +444,10 @@ module tb_Riscv();
           in_entry = 1;
         end
 
-        $display("ISSUEING INSTRUCTION: %b %h %b @ %h", instr[31:7], instr[6:2], instr[1:0], instr_addr);
+        if (in_entry) begin
+            $display("ISSUEING INSTRUCTION: %b %h %b @ %h", instr[31:7], instr[6:2], instr[1:0], instr_addr);
+            in_entry = in_entry; // So we can set break points.
+        end
       end
     end
   end
