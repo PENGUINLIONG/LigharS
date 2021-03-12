@@ -86,9 +86,9 @@ module Fpu (
     fpu_op == 4'b0100 ? (b_sign          ? -unsigned_a_data : unsigned_a_data) :
     fpu_op == 4'b0101 ? (b_sign          ? -unsigned_a_data : unsigned_a_data) :
     fpu_op == 4'b0110 ? (b_sign ^ a_sign ? -unsigned_a_data : unsigned_a_data) :
-    fpu_op == 4'b1000 ? (a_data <= b_data ? 1 : 0) :
-    fpu_op == 4'b1001 ? (a_data <  b_data ? 1 : 0) :
-    fpu_op == 4'b1010 ? (a_data == b_data ? 1 : 0) :
+    fpu_op == 4'b1000 ? (a_data <= b_data ? 64'h0001000000000000 : 0) :
+    fpu_op == 4'b1001 ? (a_data <  b_data ? 64'h0001000000000000 : 0) :
+    fpu_op == 4'b1010 ? (a_data == b_data ? 64'h0001000000000000 : 0) :
     fpu_op == 4'b1100 ? (a_data < b_data ? a_data : b_data) :
     fpu_op == 4'b1101 ? (a_data < b_data ? b_data : a_data) :
     64'bX;

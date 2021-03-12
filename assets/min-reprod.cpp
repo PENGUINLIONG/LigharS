@@ -247,7 +247,7 @@ extern "C" bool trace(const Ray& ray, u32 itri, u32 depth, Vec3& color) {
   Vec3 refl = -reflect(ray.v, n);
   Ray refl_ray = Ray { p, normalized(refl) };
 
-  if (depth < 2) {
+  if (depth < 1) {
     // Lighting.
     Vec3 specular {};
     traverse(refl_ray, depth + 1, specular);

@@ -349,7 +349,7 @@ def set_entry_fn(symbol_offset_map):
     cmdbuf[9] = 0b00000000000000000000_00010_0110111 + imm20 # lui
     cmdbuf[10] = 0b000000000000_00001_000_00001_1100111 + (((entry_offset - imm20) & 0xfff) << 20) # jalr
 
-set_stack_ptr(cmdbuf, 8192)
+set_stack_ptr(cmdbuf, 16384)
 for i, arg in enumerate(THREAD_ARGS):
     set_param(cmdbuf, i, int(arg))
 #set_entry_fn(symbol_offset_map)
@@ -392,7 +392,7 @@ module tb_Riscv();
   wire should_read_mem;
   wire should_write_mem;
 
-  DataMemory data_mem(`MEM_LIKE_MODULE
+  DataMemory #(.NWORD(16384)) data_mem(`MEM_LIKE_MODULE
     // in
     .instr_addr(instr_addr),
     .data_addr(data_addr),
@@ -447,7 +447,7 @@ module tb_Riscv();
       end
 
       if (~clk) begin
-        if (uut.pc.pc > 11 * 4 & ~in_entry) begin
+        if (uut.pc.pc == 12 * 4) begin
           $display("THREAD ENTERED ENTRY POINT");
           in_entry = 1;
         end

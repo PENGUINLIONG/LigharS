@@ -58,10 +58,9 @@ extern "C" u32 test_pack_unorm4_rgba(u32 r, u32 g, u32 b) {
 extern "C" u32 test_clamp(u32 i) {
   return (u32)clamp(Vec3{ f32(i), f32(i), f32(i) }, 50.0f, 100.0f).x;
 }
-extern "C" u32 test_min(u32 i) {
-  return min(f32(i), 100.0f);
+extern "C" u32 test_min(u32 a, u32 b) {
+  return min(f32(a), f32(b));
 }
-extern "C" u32 test_max(u32 i) {
-  return max(f32(i), 50.0f);
+extern "C" u32 test_max(u32 a, u32 b) {
+  return max(f32(a), f32(b));
 }
-
