@@ -51,8 +51,9 @@ module Q15Divider (
 
 
   wire nan = a_nan | b_nan | b_zero | (a_inf & b_inf) | div_by_zero;
-  wire res_sign = a_sign ^ b_sign;
+  wire res_sign = (a_sign ^ b_sign) & !a_zero;
   assign res =
+    busy   ? 0 :
     nan    ? 64'h8000000000000000 :
     a_inf  ? a :
     b_inf  ? 0 :

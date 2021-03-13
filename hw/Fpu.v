@@ -17,9 +17,9 @@
 // | 4'b0101 | -sign(B)           * abs(A) |
 // | 4'b0110 |  sign(B) ^ sign(A) * abs(A) |
 // |---------|-----------------------------|
-// | 4'b1010 | A == B ? 1 : 0              |
+// | 4'b1000 | A <= B ? 1 : 0              |
 // | 4'b1001 | A <  B ? 1 : 0              |
-// | 4'b1011 | A <= B ? 1 : 0              |
+// | 4'b1010 | A == B ? 1 : 0              |
 // |---------|-----------------------------|
 // | 4'b1100 | A < B ? A : B (min)         |
 // | 4'b1101 | A < B ? B : A (max)         |
@@ -75,6 +75,8 @@ module Fpu (
   wire b_sign = b_data[63];
   wire [63:0] unsigned_a_data = a_sign ? -a_data : a_data;
 
+  wire nan = fpu_res == 64'h8000000000000000 ? 1 : 0;
+  wire inf = fpu_res == 64'h7fffffffffffffff | fpu_res == 64'h8000000000000001 ? 1 : 0; 
   assign busy = div_busy;
   assign fpu_res =
     fpu_op == 4'b0000 ? sum :
@@ -84,9 +86,9 @@ module Fpu (
     fpu_op == 4'b0100 ? (b_sign          ? -unsigned_a_data : unsigned_a_data) :
     fpu_op == 4'b0101 ? (b_sign          ? -unsigned_a_data : unsigned_a_data) :
     fpu_op == 4'b0110 ? (b_sign ^ a_sign ? -unsigned_a_data : unsigned_a_data) :
-    fpu_op == 4'b1010 ? (a_data == b_data ? 1 : 0) :
-    fpu_op == 4'b1001 ? (a_data <  b_data ? 1 : 0) :
-    fpu_op == 4'b1011 ? (a_data <= b_data ? 1 : 0) :
+    fpu_op == 4'b1000 ? (a_data <= b_data ? 64'h0001000000000000 : 0) :
+    fpu_op == 4'b1001 ? (a_data <  b_data ? 64'h0001000000000000 : 0) :
+    fpu_op == 4'b1010 ? (a_data == b_data ? 64'h0001000000000000 : 0) :
     fpu_op == 4'b1100 ? (a_data < b_data ? a_data : b_data) :
     fpu_op == 4'b1101 ? (a_data < b_data ? b_data : a_data) :
     64'bX;
